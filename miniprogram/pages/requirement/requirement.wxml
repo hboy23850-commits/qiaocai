@@ -48,9 +48,9 @@
   </t-cell-group>
 
   <!-- 图形工作台快捷入口 -->
-  <view class="workbench-entry mb-20" wx:if="{{!isDemo}}">
+  <view class="workbench-entry mb-20">
     <t-button theme="primary" variant="outline" block icon="edit-1" bind:tap="navToWorkbench">
-      🎨 打开全屏图形工作台（9类模板/自由手绘/拍照/SVG）
+      🎨 录入图形（A 模板 / B 模板＋点绘 / C 拍照识别）
     </t-button>
   </view>
 

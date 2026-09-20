@@ -16,6 +16,32 @@
     </t-button>
   </view>
 
+  <view class="section-title">选择零件录入方式</view>
+  <view class="shape-mode-grid">
+    <view id="mode-a-template" class="shape-mode-card" data-mode="template" bind:tap="navToWorkbench">
+      <view class="shape-mode-code">A</view>
+      <view class="shape-mode-copy">
+        <view class="shape-mode-title">形状模板</view>
+        <view class="shape-mode-desc">选矩形、圆形、L形等模板并填写尺寸</view>
+      </view>
+    </view>
+    <view id="mode-b-trace" class="shape-mode-card recommended" data-mode="trace" bind:tap="navToWorkbench">
+      <view class="shape-mode-code">B</view>
+      <view class="shape-mode-copy">
+        <view class="shape-mode-title">模板＋点绘自由轮廓</view>
+        <view class="shape-mode-desc">推荐：先选近似模板，再拖动或追加节点</view>
+      </view>
+      <view class="shape-mode-badge">推荐</view>
+    </view>
+    <view id="mode-c-photo" class="shape-mode-card" data-mode="photo" bind:tap="navToWorkbench">
+      <view class="shape-mode-code">C</view>
+      <view class="shape-mode-copy">
+        <view class="shape-mode-title">拍照识别纸样</view>
+        <view class="shape-mode-desc">填写实际宽度，从相册或相机提取轮廓</view>
+      </view>
+    </view>
+  </view>
+
   <view class="section-title">自己制作，只需三步</view>
   <view class="workflow-card">
     <view class="workflow-step" bind:tap="navToStock">

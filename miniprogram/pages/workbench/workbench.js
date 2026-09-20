@@ -58,6 +58,7 @@ Page({
         dpTolerance: 3,
         photoKnownWidthMm: 100,
         photoPath: '',
+        photoStatus: '尚未选择图片',
         geometrySource: 'TEMPLATE',
         // SVG 状态
         svgCode: '',
@@ -73,8 +74,18 @@ Page({
     viewScale: 1,
     viewOffsetX: 0,
     viewOffsetY: 0,
-    onLoad() {
+    onLoad(options) {
         this.updateFromTemplate();
+        const mode = options?.mode || 'template';
+        if (mode === 'trace') {
+            this.traceCurrentTemplate();
+        }
+        else if (mode === 'draw') {
+            this.startBlankDrawing();
+        }
+        else if (mode === 'photo') {
+            this.setData({ currentTab: 'photo', geometrySource: 'PHOTO' });
+        }
     },
     onReady() {
         this.initCanvas();
@@ -107,17 +118,20 @@ Page({
             }
             else if (tab === 'draw') {
                 this.setData({ geometrySource: 'DRAW' });
-                if (this.data.drawPoints.length === 0) {
-                    // 初始化默认三角形绘制点
-                    const pts = [
-                        { x: 100, y: 100 },
-                        { x: 500, y: 100 },
-                        { x: 300, y: 400 },
-                    ];
-                    this.setData({ drawPoints: pts, isClosed: true });
-                    this.pushDrawHistory(pts);
+                if (this.data.drawPoints.length > 0) {
+                    this.syncGeometryInfo(this.data.drawPoints, 'POLYGON', '自由多边形');
                 }
-                this.syncGeometryInfo(this.data.drawPoints, 'POLYGON', '自由多边形');
+                else {
+                    this.setData({
+                        shapeKindName: '自由点绘',
+                        geoWidthMm: 0,
+                        geoHeightMm: 0,
+                        geoAreaMm2: 0,
+                        vertexCount: 0,
+                        selfIntersecting: false,
+                        isClosed: false,
+                    });
+                }
             }
             else if (tab === 'photo') {
                 this.setData({ geometrySource: 'PHOTO' });
@@ -179,6 +193,44 @@ Page({
         });
     },
     // === 自由绘制操作 ===
+    traceCurrentTemplate() {
+        if (!this.currentGeo || !this.currentGeo.points || this.currentGeo.points.length < 3) {
+            (0, index_2.default)({ context: this, selector: '#t-toast', message: '请先选择并配置一个形状模板', theme: 'warning' });
+            return;
+        }
+        const templateName = this.data.shapeKindName;
+        const points = this.currentGeo.points.map((point) => ({ ...point }));
+        this.setData({
+            currentTab: 'draw',
+            geometrySource: 'DRAW',
+            drawPoints: points,
+            isClosed: true,
+            drawHistory: [points.map((point) => ({ ...point }))],
+            drawHistoryIndex: 0,
+            dragIndex: -1,
+            partName: `${templateName}点绘零件`,
+        });
+        this.syncGeometryInfo(points, 'POLYGON', `${templateName}模板点绘`);
+        this.renderCanvas();
+    },
+    startBlankDrawing() {
+        this.setData({
+            currentTab: 'draw',
+            geometrySource: 'DRAW',
+            drawPoints: [],
+            isClosed: false,
+            drawHistory: [[]],
+            drawHistoryIndex: 0,
+            dragIndex: -1,
+            shapeKindName: '自由点绘',
+            geoWidthMm: 0,
+            geoHeightMm: 0,
+            geoAreaMm2: 0,
+            vertexCount: 0,
+            selfIntersecting: false,
+        });
+        this.renderCanvas();
+    },
     pushDrawHistory(pts) {
         const history = this.data.drawHistory.slice(0, this.data.drawHistoryIndex + 1);
         history.push([...pts]);
@@ -288,21 +340,28 @@ Page({
     },
     // === 拍照与 SVG ===
     choosePhoto() {
+        this.setData({ photoStatus: '等待选择照片…' });
         wx.chooseMedia({
             count: 1,
             mediaType: ['image'],
             sourceType: ['album', 'camera'],
             success: async (res) => {
                 const tempPath = res.tempFiles[0].tempFilePath;
-                this.setData({ photoPath: tempPath });
+                this.setData({ photoPath: tempPath, photoStatus: '正在读取图片并提取轮廓…' });
                 await this.extractPhotoContour(tempPath);
             },
             fail: (err) => {
+                this.setData({ photoStatus: String(err.errMsg || '').includes('cancel') ? '已取消选择图片' : '图片读取失败' });
                 if (!String(err.errMsg || '').includes('cancel')) {
                     (0, index_2.default)({ context: this, selector: '#t-toast', message: '无法读取图片，请重试', theme: 'error' });
                 }
             },
         });
+    },
+    async recognizeSamplePhoto() {
+        const samplePath = '/assets/demo-paper-pattern.png';
+        this.setData({ photoPath: samplePath, photoStatus: '正在识别示例纸样…' });
+        await this.extractPhotoContour(samplePath);
     },
     async extractPhotoContour(tempPath) {
         if (!this.canvas || !this.ctx) {
@@ -325,9 +384,19 @@ Page({
                 image.onerror = reject;
                 image.src = tempPath;
             });
-            this.ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
-            this.ctx.drawImage(image, 0, 0, drawW, drawH);
-            const imageData = this.ctx.getImageData(0, 0, drawW, drawH);
+            // 像素分析必须在未缩放坐标系中执行。画布展示使用 DPR 缩放，若直接
+            // getImageData 会只读取高分屏位图的左上区域，导致真机上识别失败。
+            let imageData;
+            this.ctx.save();
+            try {
+                this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                this.ctx.drawImage(image, 0, 0, drawW, drawH);
+                imageData = this.ctx.getImageData(0, 0, drawW, drawH);
+            }
+            finally {
+                this.ctx.restore();
+            }
             const gray = new Uint8Array(drawW * drawH);
             let borderSum = 0;
             let borderCount = 0;
@@ -374,6 +443,7 @@ Page({
                 currentTab: 'draw',
                 geometrySource: 'PHOTO',
                 isClosed: true,
+                photoStatus: `识别完成：${simplified.length} 个可编辑节点`,
             });
             this.pushDrawHistory(simplified);
             this.syncGeometryInfo(simplified, 'POLYGON', '图片辅助轮廓');
@@ -382,6 +452,7 @@ Page({
         }
         catch (err) {
             console.warn('extractPhotoContour error:', err);
+            this.setData({ photoStatus: err.message || '轮廓提取失败' });
             (0, index_2.default)({ context: this, selector: '#t-toast', message: err.message || '轮廓提取失败，请改用手动描边', theme: 'error' });
         }
     },

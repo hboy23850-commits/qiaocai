@@ -34,6 +34,10 @@ Page({
     navToRequirement() {
         wx.navigateTo({ url: '/pages/requirement/requirement' });
     },
+    navToWorkbench(e) {
+        const mode = e?.currentTarget?.dataset?.mode || 'template';
+        wx.navigateTo({ url: '/pages/workbench/workbench?mode=' + mode });
+    },
     navToStock() {
         wx.navigateTo({ url: '/pages/stock/stock' });
     },

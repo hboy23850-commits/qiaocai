@@ -25,3 +25,49 @@
 .secondary-item { display: flex; flex: 1; align-items: center; justify-content: center; gap: 12rpx; color: #385043; font-size: 27rpx; }
 .secondary-divider { width: 1rpx; height: 40rpx; background: #e6ebe7; }
 .home-footer { padding: 38rpx 0 10rpx; color: #8a958e; font-size: 22rpx; text-align: center; }
+
+
+.shape-mode-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+  margin-bottom: 28rpx;
+}
+.shape-mode-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 24rpx;
+  background: #FFFFFF;
+  border: 2rpx solid #DDE5DF;
+  border-radius: 20rpx;
+  box-shadow: 0 6rpx 18rpx rgba(24, 92, 55, 0.06);
+}
+.shape-mode-card.recommended { border-color: #185C37; background: #F1F8F3; }
+.shape-mode-code {
+  flex: 0 0 64rpx;
+  width: 64rpx;
+  height: 64rpx;
+  line-height: 64rpx;
+  text-align: center;
+  border-radius: 18rpx;
+  color: #FFFFFF;
+  background: #185C37;
+  font-size: 30rpx;
+  font-weight: 700;
+}
+.shape-mode-copy { flex: 1; min-width: 0; }
+.shape-mode-title { color: #183D29; font-size: 29rpx; font-weight: 650; }
+.shape-mode-desc { margin-top: 6rpx; color: #66756B; font-size: 23rpx; line-height: 1.45; }
+.shape-mode-badge {
+  position: absolute;
+  top: -12rpx;
+  right: 20rpx;
+  padding: 5rpx 14rpx;
+  border-radius: 999rpx;
+  color: #FFFFFF;
+  background: #F06A2A;
+  font-size: 20rpx;
+  font-weight: 600;
+}

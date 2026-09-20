@@ -109,3 +109,12 @@
   display: flex;
   gap: 6px;
 }
+
+
+.template-actions,
+.draw-source-actions { margin-top: 12px; }
+.draw-source-actions { display: flex; gap: 8px; }
+.action-help,
+.photo-actions t-button + t-button { margin-top: 10px; }
+.photo-status { margin-top: 8px; color: #66756B; font-size: 12px; line-height: 1.5; }
+.photo-status { text-align: center; }

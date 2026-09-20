@@ -83,10 +83,18 @@
         <t-input label="内半径 (mm)" type="digit" value="{{tplParams.innerRadius}}" data-key="innerRadius" bind:change="updateTplParam" align="right" />
       </block>
     </t-cell-group>
+    <view class="template-actions">
+      <t-button id="trace-template-button" theme="primary" variant="outline" block bindtap="traceCurrentTemplate">以当前模板为底稿进入点绘</t-button>
+      <view class="action-help">模板顶点会完整保留；进入后可拖动节点，打开闭合状态后可继续追加节点。</view>
+    </view>
   </view>
 
   <!-- TAB 2: 自由绘制 -->
   <view class="tab-content" wx:if="{{currentTab === 'draw'}}">
+    <view class="draw-source-actions">
+      <t-button id="reload-template-button" size="small" theme="primary" variant="outline" bindtap="traceCurrentTemplate">从当前模板载入</t-button>
+      <t-button id="blank-draw-button" size="small" variant="outline" bindtap="startBlankDrawing">开始空白点绘</t-button>
+    </view>
     <view class="draw-toolbar">
       <t-button size="small" variant="outline" icon="rollback" bindtap="drawUndo" disabled="{{drawHistoryIndex <= 0}}">撤销</t-button>
       <t-button size="small" variant="outline" icon="refresh" bindtap="drawRedo" disabled="{{drawHistoryIndex >= drawHistory.length - 1}}">重做</t-button>
@@ -107,7 +115,9 @@
   <!-- TAB 3: 拍照轮廓识别 -->
   <view class="tab-content" wx:if="{{currentTab === 'photo'}}">
     <view class="photo-actions">
-      <t-button theme="primary" icon="camera" block bindtap="choosePhoto">拍摄/选择实物图片</t-button>
+      <t-button id="choose-photo-button" theme="primary" icon="camera" block bindtap="choosePhoto">拍摄/选择实物图片</t-button>
+      <t-button id="sample-photo-button" theme="primary" variant="outline" block bindtap="recognizeSamplePhoto">先用示例纸样体验识别</t-button>
+      <view class="photo-status">{{photoStatus}}</view>
     </view>
     <t-cell-group theme="card" style="margin-top: 10px;">
       <t-input label="主体实际宽度" type="digit" value="{{photoKnownWidthMm}}" suffix="mm" align="right" bind:change="onPhotoWidthChange" tips="用于把图片像素换算成真实尺寸" />
@@ -176,7 +186,7 @@
   <!-- 底部吸底保存按钮 -->
   <view class="footer-btn">
     <t-button theme="primary" block size="large" icon="check" bindtap="confirmShape">
-      完成并存入零件清单
+      {{currentTab === 'template' ? '保存模板零件' : geometrySource === 'PHOTO' ? '保存识别轮廓' : '保存点绘轮廓'}}
     </t-button>
   </view>
 
