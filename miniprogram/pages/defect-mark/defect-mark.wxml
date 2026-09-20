@@ -1,0 +1,17 @@
+<view class="container">
+  <view class="header">
+    <text>拍摄板材并框选缺陷(红框)</text>
+    <t-button size="small" theme="primary" bind:tap="takePhoto">拍照</t-button>
+  </view>
+  
+  <view class="canvas-container" bind:touchstart="touchStart" bind:touchmove="touchMove" bind:touchend="touchEnd">
+    <image class="bg-img" wx:if="{{imagePath}}" src="{{imagePath}}" mode="aspectFit"></image>
+    <canvas type="2d" id="defectCanvas" class="overlay-canvas"></canvas>
+  </view>
+
+  <view class="footer">
+    <t-button block theme="danger" bind:tap="clearDefects" variant="outline">清空缺陷</t-button>
+    <t-button block theme="primary" bind:tap="confirmDefects" style="margin-top: 10px;">确认并返回</t-button>
+  </view>
+  <t-toast id="t-toast" />
+</view>

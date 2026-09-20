@@ -1,0 +1,69 @@
+<view class="container">
+  <view class="hero">
+    <view class="title">材料与板材设置</view>
+    <view class="desc">录入标准整板、定制材料，设置禁排/破损区与常用模板。</view>
+  </view>
+
+  <!-- 常用材料模板快捷载入 -->
+  <view class="preset-section mb-10" style="padding: 0 16px;">
+    <view style="font-size: 13px; font-weight: bold; color: #185C37; margin-bottom: 8px;">常用材料模板快速填入</view>
+    <view style="display: flex; gap: 8px; flex-wrap: wrap;">
+      <t-tag
+        wx:for="{{presets}}"
+        wx:key="name"
+        theme="primary"
+        variant="outline"
+        bind:tap="applyPreset"
+        data-idx="{{index}}"
+      >{{item.name}} ({{item.w}}×{{item.h}})</t-tag>
+    </view>
+  </view>
+
+  <!-- 材质选择 -->
+  <t-cell-group theme="card" class="mb-20" title="材质属性">
+    <t-cell title="材质选择">
+      <view slot="note" style="display: flex; gap: 4px; flex-wrap: wrap;">
+        <t-tag
+          wx:for="{{materialOptions}}"
+          wx:key="*this"
+          theme="{{material === item ? 'primary' : 'default'}}"
+          variant="{{material === item ? 'dark' : 'outline'}}"
+          bind:tap="selectMaterial"
+          data-mat="{{item}}"
+        >{{item}}</t-tag>
+      </view>
+    </t-cell>
+    <t-input label="自定义材质" value="{{material}}" bind:change="updateMat" placeholder="如: 椴木板、亚克力" align="right" />
+    <t-input label="厚度 (mm)" type="digit" value="{{thickness}}" bind:change="updateThick" placeholder="如: 3" align="right" />
+    <t-input label="颜色/纹理" value="{{color}}" bind:change="updateColor" placeholder="如: 原木色、白色" align="right" />
+  </t-cell-group>
+
+  <!-- 尺寸与工艺参数 -->
+  <t-cell-group theme="card" class="mb-20" title="几何尺寸与安全边距">
+    <t-input label="板材长 (mm)" type="digit" value="{{width}}" bind:change="updateW" placeholder="如: 2440" align="right" />
+    <t-input label="板材宽 (mm)" type="digit" value="{{height}}" bind:change="updateH" placeholder="如: 1220" align="right" />
+    <t-input label="安全边距 (mm)" type="digit" value="{{safetyMarginMm}}" bind:change="updateSafetyMargin" placeholder="如: 2" align="right" />
+    <t-input label="单价 (元/㎡)" type="digit" value="{{price}}" bind:change="updatePrice" placeholder="用于成本核算" align="right" />
+    <t-cell title="入库数量">
+      <t-stepper slot="note" value="{{qty}}" theme="filled" min="1" max="100" bind:change="updateQty" />
+    </t-cell>
+  </t-cell-group>
+
+  <!-- 禁排区 / 破损区 / 保留区 -->
+  <t-cell-group theme="card" class="mb-20" title="破损/禁排/保留区规避">
+    <t-cell title="存在禁排/破损缺陷区" description="排料算法将严格避开此区域">
+      <t-switch slot="note" value="{{hasDefect}}" bind:change="toggleDefect" />
+    </t-cell>
+    <block wx:if="{{hasDefect}}">
+      <t-input label="禁排区起点 X (mm)" type="digit" value="{{defectX}}" bind:change="updateDefectX" align="right" />
+      <t-input label="禁排区起点 Y (mm)" type="digit" value="{{defectY}}" bind:change="updateDefectY" align="right" />
+      <t-input label="禁排区宽度 (mm)" type="digit" value="{{defectW}}" bind:change="updateDefectW" align="right" />
+      <t-input label="禁排区高度 (mm)" type="digit" value="{{defectH}}" bind:change="updateDefectH" align="right" />
+    </block>
+  </t-cell-group>
+
+  <view class="footer-btn">
+    <t-button theme="primary" block size="large" bind:tap="submit">确认材料入库</t-button>
+  </view>
+  <t-toast id="t-toast" />
+</view>

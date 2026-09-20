@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "标记缺陷",
+  "usingComponents": {
+    "t-button": "tdesign-miniprogram/button/index",
+    "t-toast": "tdesign-miniprogram/toast/index"
+  }
+}

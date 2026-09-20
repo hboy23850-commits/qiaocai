@@ -1,0 +1,47 @@
+<view class="container">
+  <view class="hero">
+    <view class="title">排料方案比较</view>
+    <view class="desc">至少生成“节省材料”“方便裁切”“综合平衡”三种启发式候选，按需选用。</view>
+  </view>
+
+  <view wx:if="{{candidates.length === 0}}" style="text-align:center; padding: 40px 16px; color: #888;">
+    <t-icon name="info-circle" size="48" color="#bbb" />
+    <view style="margin-top: 12px;">未获取到有效的求解方案，请返回检查需求</view>
+  </view>
+
+  <block wx:for="{{candidates}}" wx:key="candidateId">
+    <t-cell-group theme="card" class="mb-20">
+      <t-cell title="{{item.strategyName || (item.appliedDeltaMm === 0 ? '原尺寸方案' : '微调 ' + item.appliedDeltaMm + 'mm')}}">
+        <view slot="note">
+          <t-tag theme="{{item.layoutMode === 'PROFILE' ? 'primary' : 'default'}}" variant="light" size="small" style="margin-right:6px;">
+            {{item.layoutMode === 'PROFILE' ? '真异形排料' : '矩形分切'}}
+          </t-tag>
+          <t-tag theme="{{item.isComplete ? 'success' : 'danger'}}" size="small">
+            {{item.isComplete ? '可完整制作' : '材料不足'}}
+          </t-tag>
+        </view>
+      </t-cell>
+      
+      <t-cell title="使用材料" note="总计 {{item.usedStocks.length}} 张 (新整板: {{item.metrics.newSheetsUsed || 0}}张, 余料: {{item.metrics.offcutsUsed || 0}}张)" leftIcon="layers" />
+      <t-cell title="零件放置" note="{{item.placedPartsCount}} 件 (待排: {{item.unplacedPartIds.length}} 件)" leftIcon="app" />
+      <t-cell title="裁切复杂度" note="{{item.metrics.stepsCount}} 步 (预估 {{item.timeStr}})" leftIcon="bulletpoint" />
+
+      <t-cell title="总体材料利用率">
+        <view slot="note" style="width: 130px; display: flex; align-items: center; gap: 8px;">
+          <t-progress percentage="{{item.metrics.utilizationPercent}}" color="{{item.metrics.utilization > 0.8 ? '#185C37' : '#F06A2A'}}" style="flex:1;" />
+          <text style="font-size: 11px; color: #666;">余料率: {{item.offcutRate}}%</text>
+        </view>
+      </t-cell>
+
+      <view wx:if="{{!item.isComplete && item.unplacedPartIds.length > 0}}" style="padding: 8px 16px; background: #FFF5F2; font-size: 12px; color: #F06A2A;">
+        ⚠️ 无法放置的零件: {{item.unplacedSummary}} (原因: 当前板材尺寸不足或受禁排缺陷区限制)
+      </view>
+
+      <view style="padding: 16px;">
+        <t-button theme="primary" block disabled="{{!item.isComplete}}" bind:tap="selectCandidate" data-id="{{item.candidateId}}">
+          {{item.isComplete ? '选择此方案并查看裁切图' : '材料不足无法执行'}}
+        </t-button>
+      </view>
+    </t-cell-group>
+  </block>
+</view>

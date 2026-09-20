@@ -1,0 +1,25 @@
+<view class="container">
+  <view class="hero">
+    <view class="title">设备与排料偏好</view>
+    <view class="desc">设置默认的加工参数，提高出图效率</view>
+  </view>
+
+  <t-cell-group theme="card" class="mb-20">
+    <t-cell title="默认设备刀缝 (Kerf)" note="{{kerf}} mm" />
+    <view style="padding: 0 16px 20px;">
+      <t-slider value="{{kerf}}" min="0" max="10" step="1" bind:change="updateKerf" />
+    </view>
+  </t-cell-group>
+
+  <t-cell-group theme="card" class="mb-20">
+    <t-cell title="优先保留大块余料" description="排版时尽量将零件集中，产生完整余料">
+      <t-switch slot="note" value="{{preferBigOffcut}}" bind:change="updatePrefer" />
+    </t-cell>
+    <t-cell title="余料入库阈值" description="短边大于多少毫米时自动推荐入库" note="20 mm" />
+  </t-cell-group>
+
+  <view class="footer-btn">
+    <t-button theme="primary" block bind:tap="saveSettings">保存设置</t-button>
+  </view>
+  <t-toast id="t-toast" />
+</view>

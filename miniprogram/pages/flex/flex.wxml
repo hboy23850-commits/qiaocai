@@ -1,0 +1,51 @@
+<view class="container">
+  <view class="hero">
+    <view class="title">尺寸协商与调整</view>
+    <view class="desc">默认所有零件组锁定。若原尺寸排不下，可指定一个允许微调的组（最大缩小 0~2 mm），探索节省整张材料的更优方案。</view>
+  </view>
+
+  <t-cell-group title="选择允许调整尺寸的零件组 (单选或全部锁定)" theme="card" class="mb-20">
+    <block wx:for="{{partGroups}}" wx:key="id">
+      <t-cell
+        title="{{item.name || ('零件组 ' + (index + 1))}}"
+        description="原尺寸: {{item.targetWidth / 10}} × {{item.targetHeight / 10}} mm | 数量: {{item.quantity}} 件"
+        hover
+        bind:tap="selectGroup"
+        data-id="{{item.id}}"
+      >
+        <view slot="note">
+          <t-tag theme="{{item.isFlexible ? 'warning' : 'default'}}" variant="light">
+            {{item.isFlexible ? '允许微调' : '已锁定(不变)'}}
+          </t-tag>
+        </view>
+      </t-cell>
+    </block>
+  </t-cell-group>
+
+  <block wx:if="{{selectedFlexibleGroupId}}">
+    <t-cell-group title="微调范围设置 (仅针对选中的组)" theme="card" class="mb-20">
+      <t-cell title="宽度最大缩小量" note="{{maxShrinkMm}} mm" description="步长 1 mm，仅调整宽度，高度与数量严格保持不变" />
+      <view style="padding: 16px 20px 24px;">
+        <t-slider
+          value="{{maxShrinkMm}}"
+          min="0"
+          max="2"
+          step="1"
+          marks="{{sliderMarks}}"
+          bind:change="updateShrink"
+        />
+      </view>
+    </t-cell-group>
+  </block>
+  <block wx:else>
+    <view style="padding: 12px 16px; margin-bottom: 20px; color: #666; font-size: 13px; background: #fafafa; border-radius: 8px;">
+      💡 当前所有零件组均处于【严格锁定】状态。系统将仅按原尺寸进行排料计算。
+    </view>
+  </block>
+
+  <view class="footer-btn">
+    <t-button theme="primary" block size="large" bind:tap="solve">计算并对比排料方案</t-button>
+  </view>
+
+  <t-toast id="t-toast" />
+</view>

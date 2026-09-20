@@ -1,0 +1,94 @@
+<view class="container">
+  <view class="hero">
+    <view class="title">制作完成与实测余料登记</view>
+    <view class="desc">核对裁切制作结果，录入实际量取的边角余料尺寸并入库，供下一次制作复用。</view>
+  </view>
+
+  <!-- 制作结果指标卡片 -->
+  <t-cell-group title="制作指标统计" theme="card" class="mb-20">
+    <t-cell title="使用材料张数" note="{{usedStocksCount}} 张" leftIcon="layers" />
+    <t-cell title="完成零件总数" note="{{partsList.length}} 件" leftIcon="check-circle" />
+    <t-cell title="材料有效利用率" note="{{utilizationDisplay}}" leftIcon="chart" />
+  </t-cell-group>
+
+  <!-- 产出零件明细 -->
+  <t-cell-group title="产出零件清单 (共 {{partsList.length}} 件)" theme="card" class="mb-20">
+    <t-cell
+      wx:for="{{partsList}}"
+      wx:key="instanceId"
+      title="{{item.name || ('零件 ' + (index + 1))}}"
+      description="规格: {{item.width / 10}} × {{item.height / 10}} mm | 编号: {{item.instanceId}}"
+    />
+  </t-cell-group>
+
+  <!-- 实测余料录入与回库 -->
+  <t-cell-group title="实测余料登记 (供下次任务复用)" theme="card" class="mb-20">
+    <view style="padding: 12px 16px; color: #666; font-size: 13px; line-height: 1.5; background: #fafafa;">
+      📐 裁切完成后，请使用直尺量取实际留存的规则余料长宽。系统将依据您的实测尺寸更新库存。
+    </view>
+
+    <view wx:if="{{offcutItems.length === 0}}" style="text-align: center; padding: 24px; color: #999;">
+      无可用余料预测区域
+    </view>
+
+    <block wx:for="{{offcutItems}}" wx:key="id">
+      <view class="offcut-card" style="padding: 12px 16px; border-bottom: 1px solid #eee;">
+        <view style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <text style="font-weight: bold; color: #333;">余料块 #{{index + 1}}</text>
+          <t-switch
+            value="{{item.retained}}"
+            data-index="{{index}}"
+            bind:change="onToggleRetain"
+            label="{{['保留入库', '放弃丢弃']}}"
+          />
+        </view>
+
+        <view style="font-size: 12px; color: #888; margin-bottom: 8px;">
+          算法预测可用范围: {{item.predictedWidth / 10}} × {{item.predictedHeight / 10}} mm (参考上限)
+        </view>
+
+        <block wx:if="{{item.retained}}">
+          <t-input
+            label="实测长 (mm)"
+            type="digit"
+            placeholder="请输入实测长度"
+            value="{{item.measuredWidthMm}}"
+            data-index="{{index}}"
+            bind:change="onMeasuredWidthChange"
+            tips="{{item.widthError || ''}}"
+            status="{{item.widthError ? 'error' : 'default'}}"
+            align="right"
+          />
+          <t-input
+            label="实测宽 (mm)"
+            type="digit"
+            placeholder="请输入实测宽度"
+            value="{{item.measuredHeightMm}}"
+            data-index="{{index}}"
+            bind:change="onMeasuredHeightChange"
+            tips="{{item.heightError || ''}}"
+            status="{{item.heightError ? 'error' : 'default'}}"
+            align="right"
+          />
+        </block>
+      </view>
+    </block>
+  </t-cell-group>
+
+  <!-- 底部结案按钮 -->
+  <view class="footer-btn">
+    <t-button
+      theme="success"
+      block
+      size="large"
+      loading="{{isCommitting}}"
+      disabled="{{isCommitting}}"
+      bind:tap="commit"
+    >
+      确认制作完成并提交余料入库
+    </t-button>
+  </view>
+
+  <t-toast id="t-toast" />
+  <t-dialog id="t-dialog" />
+</view>

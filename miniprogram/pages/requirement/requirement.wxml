@@ -1,0 +1,90 @@
+<view class="container">
+  <view class="hero">
+    <view class="title">下料需求录入</view>
+    <view class="desc">录入校园手工、模型制作或展签卡片的零件规格与数量。</view>
+  </view>
+
+  <view class="project-save-bar" wx:if="{{activeProjectId}}">
+    <view>
+      <view class="project-save-name">{{projectName}}</view>
+      <view class="project-save-state">{{saveState}}</view>
+    </view>
+    <t-button size="small" variant="outline" theme="primary" bind:tap="saveActiveProject">立即保存</t-button>
+  </view>
+
+  <!-- 规则辅助文本解析面板 -->
+  <view class="ai-panel" wx:if="{{!isDemo}}">
+    <view class="ai-header">
+      <text class="ai-title">📝 规则辅助文本快速提取</text>
+    </view>
+    <t-textarea
+      value="{{ aiText }}"
+      placeholder="输入示例：需要 8张105x70 的展签卡纸，另外要 2块80x40 的立牌"
+      autosize
+      bind:change="updateAiText"
+      class="ai-textarea"
+      maxlength="100"
+      disableDefaultPadding
+    />
+    <view class="ai-action" style="margin-top: 10px;">
+      <t-button theme="primary" variant="light" size="small" block bind:tap="parseAi" loading="{{isParsing}}">
+        按规则提取尺寸与数量至表单
+      </t-button>
+    </view>
+  </view>
+
+  <!-- 裁切工艺参数 -->
+  <t-cell-group theme="card" class="mb-20">
+    <t-input
+      label="裁切间距预留"
+      type="digit"
+      value="{{ kerfMm }}"
+      placeholder="如: 2 mm"
+      suffix="mm"
+      align="right"
+      bind:change="updateKerf"
+      tips="手工裁切或美工刀预留切割缝隙 (0~5 mm)"
+    />
+  </t-cell-group>
+
+  <!-- 图形工作台快捷入口 -->
+  <view class="workbench-entry mb-20" wx:if="{{!isDemo}}">
+    <t-button theme="primary" variant="outline" block icon="edit-1" bind:tap="navToWorkbench">
+      🎨 打开全屏图形工作台（9类模板/自由手绘/拍照/SVG）
+    </t-button>
+  </view>
+
+  <!-- 零件组列表 -->
+  <view class="part-group" wx:for="{{partGroups}}" wx:key="id">
+    <view class="part-header">
+      <t-icon name="app" size="24" color="#185C37" />
+      <t-input value="{{item.name}}" data-index="{{index}}" bind:change="updateName" placeholder="零件名称 (如: 展签正面)" borderless style="flex:1;" />
+      <t-tag wx:if="{{item.geometry}}" theme="success" variant="light" size="small" style="margin-right:8px;">
+        {{item.geometry.kind}}
+      </t-tag>
+      <t-icon name="delete" size="24" color="#F06A2A" bind:tap="removeGroup" data-index="{{index}}" wx:if="{{!isDemo && partGroups.length > 1}}" />
+    </view>
+    <t-cell-group theme="card" class="mb-20">
+      <t-input label="外接长 (mm)" type="digit" value="{{item.targetWidth / 10}}" data-index="{{index}}" bind:change="updateWidth" align="right" disabled="{{item.geometry ? true : false}}" />
+      <t-input label="外接宽 (mm)" type="digit" value="{{item.targetHeight / 10}}" data-index="{{index}}" bind:change="updateHeight" align="right" disabled="{{item.geometry ? true : false}}" />
+      <t-cell title="需求数量">
+        <t-stepper slot="note" value="{{item.quantity}}" theme="filled" min="1" max="20" data-index="{{index}}" bind:change="updateQty" />
+      </t-cell>
+      <t-cell title="允许旋转" description="{{item.rotationPolicy === 'FREE_15' ? '15°自由旋转' : item.allowRotation ? '90°直角旋转' : '锁定朝向'}}">
+        <t-switch slot="note" value="{{item.allowRotation}}" data-index="{{index}}" bind:change="toggleRotation" />
+      </t-cell>
+      <t-cell wx:if="{{item.geometry}}" title="几何信息" note="{{item.geometry.points.length}} 顶点, {{item.geometry.area / 100}} mm²" leftIcon="chart-bubble" />
+    </t-cell-group>
+  </view>
+
+  <view class="add-btn-wrap" wx:if="{{!isDemo}}" style="display:flex; gap:8px;">
+    <t-button icon="add" variant="dashed" style="flex:1;" bind:tap="addGroup">添加矩形</t-button>
+    <t-button icon="edit" variant="dashed" theme="primary" style="flex:1;" bind:tap="navToWorkbench">录入异形</t-button>
+  </view>
+
+  <view class="footer-btn">
+    <t-button theme="primary" block size="large" bind:tap="navToFlex">下一步：尺寸协商与计算</t-button>
+  </view>
+
+  <t-toast id="t-toast" />
+</view>

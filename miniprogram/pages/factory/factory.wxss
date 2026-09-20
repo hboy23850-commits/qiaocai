@@ -1,0 +1,316 @@
+.factory-container {
+  padding: 16px;
+  background-color: #F8F8F0;
+  min-height: 100vh;
+}
+
+/* 评委演示模拟舱卡片 */
+.simulator-card {
+  background: #FFFFFF;
+  border-radius: 12px;
+  padding: 16px;
+  border: 1.5px dashed #4A7A59;
+  box-shadow: 0 4px 12px rgba(26, 77, 46, 0.08);
+}
+
+.simulator-header {
+  margin-bottom: 12px;
+}
+
+.simulator-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.simulator-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--td-brand-color, #1A4D2E);
+}
+
+.simulator-desc {
+  font-size: 12px;
+  color: #666666;
+  line-height: 1.4;
+}
+
+.simulator-controls {
+  margin-bottom: 10px;
+}
+
+.simulator-btn-group {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.role-switch-btn {
+  flex: 1;
+}
+
+.simulator-quick-wrap {
+  margin-top: 6px;
+}
+
+.simulator-footer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #888888;
+  padding-top: 8px;
+  border-top: 1px solid #EEEEEE;
+}
+
+.openid-label {
+  font-weight: 500;
+}
+
+.openid-value {
+  font-family: monospace;
+  background: #F0F4F1;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: #1A4D2E;
+}
+
+/* 入口卡片与表单 */
+.entry-card {
+  background: #FFFFFF;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.tab-body {
+  padding: 20px 16px;
+}
+
+.tab-intro {
+  margin-bottom: 16px;
+}
+
+.intro-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333333;
+  margin-bottom: 4px;
+}
+
+.intro-desc {
+  font-size: 13px;
+  color: #666666;
+  line-height: 1.5;
+}
+
+.input-wrap {
+  margin-bottom: 20px;
+  background: #FAFAFA;
+  border-radius: 8px;
+  padding: 4px 0;
+}
+
+.btn-wrap {
+  margin-top: 8px;
+}
+
+/* SaaS 特性卡片 */
+.saas-features-card {
+  background: #FFFFFF;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.features-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--td-brand-color, #1A4D2E);
+  margin-bottom: 12px;
+}
+
+.features-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.features-item:last-child {
+  margin-bottom: 0;
+}
+
+.features-text {
+  font-size: 13px;
+  color: #444444;
+  line-height: 1.4;
+  flex: 1;
+}
+
+/* 工厂主档卡片 */
+.factory-info-card {
+  background: #FFFFFF;
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+}
+
+.boss-border {
+  border-left: 5px solid #E85D04;
+}
+
+.worker-border {
+  border-left: 5px solid #1A4D2E;
+}
+
+.factory-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.factory-main-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.factory-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1A4D2E;
+}
+
+.factory-sub-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.factory-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.meta-label {
+  font-size: 13px;
+  color: #888888;
+}
+
+.meta-val {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333333;
+}
+
+.worker-notice-banner {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background-color: #F0F7F2;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #2F6F44;
+  line-height: 1.5;
+}
+
+/* 邀请码卡片 */
+.invite-code-card {
+  background: #FFFFFF;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+}
+
+.invite-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.invite-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333333;
+}
+
+.invite-code-display-box {
+  background: #F8F8F0;
+  border: 2px dashed #1A4D2E;
+  border-radius: 10px;
+  padding: 16px 24px;
+  display: inline-block;
+  margin-bottom: 16px;
+}
+
+.invite-code-text {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: 8px;
+  color: #1A4D2E;
+}
+
+.invite-copy-btn-wrap {
+  max-width: 240px;
+  margin: 0 auto 12px;
+}
+
+.invite-tip {
+  font-size: 12px;
+  color: #888888;
+  line-height: 1.4;
+}
+
+/* 成员花名册 */
+.members-card {
+  background: #FFFFFF;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+}
+
+.members-header {
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #F0F0F0;
+}
+
+.members-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.members-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1A4D2E;
+}
+
+.members-badge {
+  font-size: 13px;
+  color: #888888;
+}
+
+.member-avatar {
+  margin-right: 8px;
+  display: flex;
+  align-items: center;
+}
+
+/* 快捷导航 */
+.quick-nav-card {
+  margin-top: 10px;
+}
+
+.mb-10 {
+  margin-bottom: 10px;
+}

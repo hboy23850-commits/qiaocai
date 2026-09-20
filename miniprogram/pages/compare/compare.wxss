@@ -1,0 +1,10 @@
+page { background-color: #F8F8F0; padding-bottom: 20px; }
+.hero { padding: 30px 20px; }
+.title { font-size: 22px; font-weight: bold; color: #1A4D2E; margin-bottom: 12px; }
+.desc { color: #666; font-size: 14px; line-height: 1.6; }
+.mb-20 { margin-bottom: 20px !important; }
+.cand-header { display: flex; justify-content: space-between; align-items: center; padding: 16px; background: white; border-bottom: 1px solid #f5f5f5; }
+.cand-title { font-size: 16px; font-weight: bold; color: #333; }
+.shrink-title { color: #E85D04; }
+.cand-action { padding: 16px; background: white; }
+.progress-wrap { width: 120px; display: flex; align-items: center; }

@@ -1,0 +1,10 @@
+{
+  "miniprogram": {
+    "appId": "wx_your_miniprogram_appid",
+    "cloudEnvId": "qiaocai-prod-xxxxx"
+  },
+  "cloudfunctions": {
+    "dashscopeApiKey": "sk-your-dashscope-api-key",
+    "qwenModel": "qwen-plus"
+  }
+}

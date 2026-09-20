@@ -1,0 +1,14 @@
+{
+  "name": "@qiaocai/core",
+  "version": "1.0.0",
+  "description": "巧裁核心排料算法、单位换算与独立校验器",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "keywords": ["nesting", "guillotine", "cutting-stock"],
+  "author": "",
+  "license": "MIT"
+}

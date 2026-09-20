@@ -1,0 +1,285 @@
+<view class="container factory-container">
+  <!-- 1. 评委演示 / 角色模拟测试舱 (Contest Judge Simulator) -->
+  <view class="simulator-card mb-20">
+    <view class="simulator-header">
+      <view class="simulator-title-row">
+        <t-icon name="control-platform" size="20px" color="#1A4D2E" />
+        <text class="simulator-title">评委演示 / 角色模拟切换舱</text>
+        <t-tag theme="warning" variant="light" size="extra-small">评审专用</t-tag>
+      </view>
+      <view class="simulator-desc">单机无缝切换双端角色，验证数据隔离与多端协同闭环</view>
+    </view>
+
+    <view class="simulator-controls">
+      <view class="simulator-btn-group">
+        <t-button
+          theme="{{simulatedRole === 'BOSS' ? 'warning' : 'default'}}"
+          variant="{{simulatedRole === 'BOSS' ? 'base' : 'outline'}}"
+          size="small"
+          data-role="BOSS"
+          bind:tap="onSwitchSimulatedRole"
+          class="role-switch-btn"
+        >
+          👔 老板视角 (BOSS)
+        </t-button>
+        <t-button
+          theme="{{simulatedRole === 'WORKER' ? 'primary' : 'default'}}"
+          variant="{{simulatedRole === 'WORKER' ? 'base' : 'outline'}}"
+          size="small"
+          data-role="WORKER"
+          bind:tap="onSwitchSimulatedRole"
+          class="role-switch-btn"
+        >
+          👷 工人视角 (WORKER)
+        </t-button>
+      </view>
+
+      <view class="simulator-quick-wrap">
+        <t-button
+          theme="success"
+          variant="light"
+          size="extra-small"
+          icon="lightning"
+          block
+          bind:tap="onQuickSetupDemo"
+        >
+          ⚡ 一键生成双端协同演示数据 (自动建厂+工人加入+物料注入)
+        </t-button>
+      </view>
+    </view>
+
+    <view class="simulator-footer">
+      <text class="openid-label">当前模拟 OpenID:</text>
+      <text class="openid-value">{{currentOpenId}}</text>
+    </view>
+  </view>
+
+  <!-- 2. 状态 A：未加入工厂 (No Factory State) -->
+  <block wx:if="{{!inFactory}}">
+    <view class="entry-card mb-20">
+      <t-tabs value="{{activeTab}}" bind:change="onTabChange" theme="card">
+        <t-tab-panel label="创建工厂 (我是老板)" value="{{0}}">
+          <view class="tab-body">
+            <view class="tab-intro">
+              <view class="intro-title">成为工厂厂长</view>
+              <view class="intro-desc">创建专属工厂组织，获取 6 位邀请码，统一管理全厂板材与切割方案。</view>
+            </view>
+            <view class="input-wrap">
+              <t-input
+                label="工厂名称"
+                placeholder="如: 巧裁东莞精工智造厂"
+                value="{{newFactoryName}}"
+                bind:change="onFactoryNameInput"
+                clearable
+              />
+            </view>
+            <view class="btn-wrap">
+              <t-button theme="primary" size="large" block bind:tap="onCreateFactory">
+                立即创建工厂 (生成邀请码)
+              </t-button>
+            </view>
+          </view>
+        </t-tab-panel>
+
+        <t-tab-panel label="加入工厂 (我是工人)" value="{{1}}">
+          <view class="tab-body">
+            <view class="tab-intro">
+              <view class="intro-title">加入车间团队</view>
+              <view class="intro-desc">输入老板提供的 6 位大写邀请码，加入企业共享库存与协同网络。</view>
+            </view>
+            <view class="input-wrap">
+              <t-input
+                label="6位邀请码"
+                placeholder="请输入邀请码 (如 QC8821)"
+                maxlength="{{6}}"
+                value="{{joinInviteCode}}"
+                bind:change="onInviteCodeInput"
+                clearable
+              />
+            </view>
+            <view class="btn-wrap">
+              <t-button theme="success" size="large" block bind:tap="onJoinFactory">
+                验证邀请码并加入
+              </t-button>
+            </view>
+          </view>
+        </t-tab-panel>
+      </t-tabs>
+    </view>
+
+    <view class="saas-features-card mb-20">
+      <view class="features-title">✨ SaaS 协同赋能</view>
+      <view class="features-item">
+        <t-icon name="check-circle-filled" size="18px" color="#1A4D2E" />
+        <text class="features-text">全厂材料实时共享：整板与余料全员同步，彻底杜绝呆料浪费</text>
+      </view>
+      <view class="features-item">
+        <t-icon name="check-circle-filled" size="18px" color="#1A4D2E" />
+        <text class="features-text">原子防冲突扣减：多工人同时切板无冲突，系统严格锁控</text>
+      </view>
+      <view class="features-item">
+        <t-icon name="check-circle-filled" size="18px" color="#1A4D2E" />
+        <text class="features-text">商业 ERP 报价单：一键归档工厂报价账册，对外专业派单</text>
+      </view>
+    </view>
+  </block>
+
+  <!-- 3. 状态 B：老板视角 (Boss View) -->
+  <block wx:elif="{{inFactory && role === 'BOSS'}}">
+    <!-- 工厂主档卡片 -->
+    <view class="factory-info-card mb-20 boss-border">
+      <view class="factory-header-row">
+        <view class="factory-main-title">
+          <t-icon name="shop" size="24px" color="#1A4D2E" />
+          <text class="factory-name">{{factory.name}}</text>
+        </view>
+        <t-tag theme="warning" variant="dark" size="small">👑 厂长 / BOSS</t-tag>
+      </view>
+      <view class="factory-sub-row">
+        <view class="factory-meta-item">
+          <text class="meta-label">运行状态: </text>
+          <t-tag theme="success" variant="light" size="extra-small">正常运营中</t-tag>
+        </view>
+        <view class="factory-meta-item">
+          <text class="meta-label">协同成员: </text>
+          <text class="meta-val">{{members.length || factory.membersCount || 1}} 人</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 专属 6 位邀请码卡片 -->
+    <view class="invite-code-card mb-20">
+      <view class="invite-card-header">
+        <text class="invite-title">工厂专属邀请码 (发给工人加入)</text>
+        <t-tag theme="primary" variant="light" size="extra-small">6位大写</t-tag>
+      </view>
+
+      <view class="invite-code-display-box">
+        <text class="invite-code-text">{{factory.inviteCode}}</text>
+      </view>
+
+      <view class="invite-copy-btn-wrap">
+        <t-button theme="primary" icon="copy" size="medium" block bind:tap="onCopyInviteCode">
+          一键复制邀请码
+        </t-button>
+      </view>
+      <view class="invite-tip">💡 工人在其微信小程序端输入该邀请码，即可加入本厂共享板材与方案。</view>
+    </view>
+
+    <!-- 成员花名册 -->
+    <view class="members-card mb-20">
+      <view class="members-header">
+        <view class="members-title-row">
+          <t-icon name="usergroup" size="20px" color="#1A4D2E" />
+          <text class="members-title">工厂成员花名册</text>
+          <text class="members-badge">({{members.length}}人)</text>
+        </view>
+      </view>
+
+      <t-cell-group>
+        <block wx:for="{{members}}" wx:key="openid">
+          <t-cell
+            title="{{item.nickName || (item.role === 'BOSS' ? '厂长 (管理员)' : '车间技工')}}"
+            description="加入时间: {{item.joinedAt}}"
+          >
+            <view slot="left-icon" class="member-avatar">
+              <t-icon name="{{item.role === 'BOSS' ? 'user-vip' : 'user'}}" size="22px" color="{{item.role === 'BOSS' ? '#E85D04' : '#1A4D2E'}}" />
+            </view>
+            <view slot="note">
+              <t-tag
+                theme="{{item.role === 'BOSS' ? 'warning' : 'primary'}}"
+                variant="{{item.role === 'BOSS' ? 'dark' : 'light'}}"
+                size="small"
+              >
+                {{item.role === 'BOSS' ? '老板 BOSS' : '工人 WORKER'}}
+              </t-tag>
+            </view>
+          </t-cell>
+        </block>
+      </t-cell-group>
+    </view>
+
+    <!-- 协同快捷导航 -->
+    <view class="quick-nav-card mb-20">
+      <t-button theme="primary" variant="outline" block icon="shop" bind:tap="navToStock" class="mb-10">
+        查看工厂共享材料库 (实时互通)
+      </t-button>
+      <t-button theme="primary" block icon="add-circle" bind:tap="navToRequirement">
+        发起企业排料方案
+      </t-button>
+    </view>
+  </block>
+
+  <!-- 4. 状态 C：工人视角 (Worker View) -->
+  <block wx:elif="{{inFactory && role === 'WORKER'}}">
+    <!-- 工人归属卡片 -->
+    <view class="factory-info-card mb-20 worker-border">
+      <view class="factory-header-row">
+        <view class="factory-main-title">
+          <t-icon name="usergroup" size="24px" color="#1A4D2E" />
+          <text class="factory-name">{{factory.name}}</text>
+        </view>
+        <t-tag theme="primary" variant="dark" size="small">👷 工人 (WORKER)</t-tag>
+      </view>
+      <view class="factory-sub-row">
+        <view class="factory-meta-item">
+          <text class="meta-label">协同网络: </text>
+          <t-tag theme="success" variant="light" size="extra-small">已互联共享</t-tag>
+        </view>
+        <view class="factory-meta-item">
+          <text class="meta-label">在册成员: </text>
+          <text class="meta-val">{{members.length || factory.membersCount || 1}} 人</text>
+        </view>
+      </view>
+      <view class="worker-notice-banner">
+        您已成功接入【{{factory.name}}】共享网络。在材料库中录入的板材将自动进入全厂共享池，您也可以直接选用全厂共享整板与余料进行高效开料。
+      </view>
+    </view>
+
+    <!-- 团队伙伴花名册 -->
+    <view class="members-card mb-20">
+      <view class="members-header">
+        <view class="members-title-row">
+          <t-icon name="usergroup" size="20px" color="#1A4D2E" />
+          <text class="members-title">工厂团队成员</text>
+          <text class="members-badge">({{members.length}}人)</text>
+        </view>
+      </view>
+
+      <t-cell-group>
+        <block wx:for="{{members}}" wx:key="openid">
+          <t-cell
+            title="{{item.nickName || (item.role === 'BOSS' ? '厂长 (管理员)' : '车间技工')}}"
+            description="加入时间: {{item.joinedAt}}"
+          >
+            <view slot="left-icon" class="member-avatar">
+              <t-icon name="{{item.role === 'BOSS' ? 'user-vip' : 'user'}}" size="22px" color="{{item.role === 'BOSS' ? '#E85D04' : '#1A4D2E'}}" />
+            </view>
+            <view slot="note">
+              <t-tag
+                theme="{{item.role === 'BOSS' ? 'warning' : 'primary'}}"
+                variant="{{item.role === 'BOSS' ? 'dark' : 'light'}}"
+                size="small"
+              >
+                {{item.role === 'BOSS' ? '老板 BOSS' : '工人 WORKER'}}
+              </t-tag>
+            </view>
+          </t-cell>
+        </block>
+      </t-cell-group>
+    </view>
+
+    <!-- 协同快捷导航 -->
+    <view class="quick-nav-card mb-20">
+      <t-button theme="primary" variant="outline" block icon="shop" bind:tap="navToStock" class="mb-10">
+        查看工厂共享材料库 (实时互通)
+      </t-button>
+      <t-button theme="primary" block icon="add-circle" bind:tap="navToRequirement">
+        发起排料运算
+      </t-button>
+    </view>
+  </block>
+
+  <t-toast id="t-toast" />
+  <t-dialog id="t-dialog" />
+</view>

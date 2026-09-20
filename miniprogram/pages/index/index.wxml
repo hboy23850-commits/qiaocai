@@ -1,0 +1,85 @@
+<view class="container home">
+  <view class="hero home-hero">
+    <view class="eyebrow">校园手工 · 模型制作</view>
+    <view class="title">巧裁</view>
+    <view class="subtitle">输入材料和零件尺寸，自动比较排料方案，按图裁切并保存余料。</view>
+  </view>
+
+  <view class="demo-card">
+    <view class="demo-copy">
+      <view class="demo-kicker">第一次使用？</view>
+      <view class="demo-title">用 1 分钟看懂巧裁</view>
+      <view class="demo-desc">已备好 A4 卡纸与展签尺寸，无需填写即可体验完整流程。</view>
+    </view>
+    <t-button theme="primary" block size="large" icon="play-circle" loading="{{isStartingDemo}}" disabled="{{isStartingDemo}}" bind:tap="startDemo">
+      快速体验 A4 展签案例
+    </t-button>
+  </view>
+
+  <view class="section-title">自己制作，只需三步</view>
+  <view class="workflow-card">
+    <view class="workflow-step" bind:tap="navToStock">
+      <view class="step-number">1</view>
+      <view class="step-copy">
+        <view class="step-title">1. 登记材料</view>
+        <view class="step-desc">填写卡纸或板材的长、宽和材质</view>
+      </view>
+      <t-icon name="chevron-right" size="36rpx" color="#829187" />
+    </view>
+    <view class="step-line"></view>
+    <view class="workflow-step" bind:tap="navToRequirement">
+      <view class="step-number">2</view>
+      <view class="step-copy">
+        <view class="step-title">2. 填写零件</view>
+        <view class="step-desc">输入要裁出的尺寸、数量和允许误差</view>
+      </view>
+      <t-icon name="chevron-right" size="36rpx" color="#829187" />
+    </view>
+    <view class="step-line"></view>
+    <view class="workflow-step final-step">
+      <view class="step-number">3</view>
+      <view class="step-copy">
+        <view class="step-title">3. 比较方案</view>
+        <view class="step-desc">选择省料方案，查看裁切顺序并登记余料</view>
+      </view>
+      <t-icon name="check-circle" size="36rpx" color="#1A4D2E" />
+    </view>
+  </view>
+
+  <view class="inventory-card empty" wx:if="{{stockCount === 0}}">
+    <view class="inventory-icon"><t-icon name="layers" size="48rpx" color="#1A4D2E" /></view>
+    <view class="inventory-copy">
+      <view class="inventory-title">还没有材料</view>
+      <view class="inventory-desc">先登记手边的卡纸或板材，再开始自己的排料任务。</view>
+    </view>
+    <t-button theme="primary" variant="outline" size="small" bind:tap="navToStock">去登记</t-button>
+  </view>
+
+  <view class="inventory-card" wx:else bind:tap="navToStock">
+    <view class="inventory-icon"><t-icon name="layers" size="48rpx" color="#1A4D2E" /></view>
+    <view class="inventory-copy">
+      <view class="inventory-title">材料库已有 {{stockCount}} 件</view>
+      <view class="inventory-desc">其中 {{offcutCount}} 件是可继续利用的余料</view>
+    </view>
+    <t-icon name="chevron-right" size="36rpx" color="#829187" />
+  </view>
+
+  <view class="primary-actions">
+    <t-button theme="primary" block size="large" bind:tap="navToRequirement">开始自己的排料任务</t-button>
+  </view>
+
+  <view class="secondary-actions">
+    <view class="secondary-item" bind:tap="navToHistory">
+      <t-icon name="history" size="40rpx" color="#1A4D2E" />
+      <text>历史方案</text>
+    </view>
+    <view class="secondary-divider"></view>
+    <view class="secondary-item" bind:tap="navToSettings">
+      <t-icon name="setting" size="40rpx" color="#1A4D2E" />
+      <text>裁切设置</text>
+    </view>
+  </view>
+
+  <view class="home-footer">让每一块余料都有下一次用途</view>
+  <t-toast id="t-toast" />
+</view>

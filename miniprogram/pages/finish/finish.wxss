@@ -1,0 +1,120 @@
+.container {
+  padding-bottom: 110px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px 0;
+  color: #999;
+}
+
+.factory-badge-wrap {
+  padding: 0 16px;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.quote-total-price {
+  font-size: 20px;
+  font-weight: bold;
+  color: #E85D04;
+}
+
+/* 费用构成动态分析卡片 */
+.quote-summary-card {
+  margin: 0 16px;
+  padding: 16px;
+  background: #FFFFFF;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(26, 77, 46, 0.06);
+  border: 1px solid #E5EFE7;
+}
+
+.summary-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #F0F4F1;
+}
+
+.summary-header-left {
+  display: flex;
+  flex-direction: column;
+}
+
+.summary-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1A4D2E;
+}
+
+.summary-subtitle {
+  font-size: 12px;
+  color: #888888;
+  margin-top: 2px;
+}
+
+.summary-grid {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+
+.summary-label {
+  font-size: 11px;
+  color: #777777;
+  margin-bottom: 4px;
+}
+
+.summary-val {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333333;
+}
+
+.summary-op {
+  font-size: 14px;
+  font-weight: bold;
+  color: #A0B2A6;
+  padding: 0 2px;
+}
+
+.summary-item.highlight {
+  background: #F4F8F4;
+  border-radius: 8px;
+  padding: 6px 4px;
+  border: 1px solid #D5E5D8;
+}
+
+.summary-item.highlight .summary-label {
+  color: #1A4D2E;
+  font-weight: 600;
+}
+
+.summary-val.total-accent {
+  font-size: 16px;
+  font-weight: bold;
+  color: #E85D04;
+}
+
+.quote-btn-wrap {
+  padding: 0 16px;
+}
+
+/* 离屏 Canvas 2D 绘图容器 */
+.quote-canvas {
+  position: fixed;
+  left: -9999px;
+  top: -9999px;
+  width: 750px;
+  height: 1060px;
+}

@@ -1,0 +1,57 @@
+<view class="container">
+  <view class="hero">
+    <view class="title">手工裁切指导</view>
+    <view class="desc">真实轮廓排布，遵循内紧邻到外侧裁切顺序。请逐步核对尺寸后操作。</view>
+  </view>
+
+  <!-- 工具建议与安全提示横幅 -->
+  <view class="tool-banner mb-10">
+    <view class="tool-title">🛠️ 推荐工具: {{recommendedTool}}</view>
+    <view class="safety-tip">⚠️ 安全提示: 手工作业请铺设专用切割垫板，刀路外推，切勿顺手对准手指。</view>
+  </view>
+
+  <!-- 多张材料切换 -->
+  <view wx:if="{{totalStocks > 1}}" style="display:flex; padding: 4px 16px; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;">
+    <block wx:for="{{totalStocks}}" wx:key="*this">
+      <t-tag
+        theme="{{currentStockIndex === index ? 'primary' : 'default'}}"
+        variant="{{currentStockIndex === index ? 'dark' : 'outline'}}"
+        bind:tap="switchStock"
+        data-idx="{{index}}"
+      >第 {{index + 1}} 张 ({{usedStocks[index].stockCode || '材料'}})</t-tag>
+    </block>
+  </view>
+
+  <!-- 画布展示区域 -->
+  <view class="canvas-wrap">
+    <canvas type="2d" id="cutCanvas" style="width: 100%; height: 360px;"></canvas>
+  </view>
+
+  <!-- 当前步骤指导卡片 -->
+  <t-cell-group theme="card" class="mb-20">
+    <t-cell title="当前裁切步骤" note="{{currentStep}} / {{maxStep}}" />
+    <view class="step-desc-bar">
+      <text class="step-desc-text">{{currentStepDesc || '就绪，点击“下一刀”按指导裁切'}}</text>
+    </view>
+    <view class="step-controls">
+      <t-button icon="rollback" size="small" variant="outline" bind:tap="prevStep" disabled="{{currentStep === 0}}">上一刀</t-button>
+      <t-button icon="play-circle" size="small" bind:tap="autoPlay">自动演示</t-button>
+      <t-button icon="arrow-right" size="small" theme="danger" bind:tap="nextStep" disabled="{{currentStep === maxStep}}">下一刀</t-button>
+    </view>
+  </t-cell-group>
+  
+  <view class="grid-container mb-20">
+    <t-grid column="{{2}}" border="{{true}}">
+      <t-grid-item text="导出1:1图纸 (含100mm校准线)" icon="download" bind:click="saveImage" />
+      <t-grid-item text="分享裁切方案" icon="share">
+        <button open-type="share" class="share-btn"></button>
+      </t-grid-item>
+    </t-grid>
+  </view>
+
+  <view class="footer-btn">
+    <t-button theme="primary" block size="large" bind:tap="navToFinish">完成裁切，登记实测余料</t-button>
+  </view>
+  <t-toast id="t-toast" />
+  <t-dialog id="t-dialog" />
+</view>

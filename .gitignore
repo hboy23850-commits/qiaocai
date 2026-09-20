@@ -1,0 +1,39 @@
+node_modules/
+**/node_modules/
+dist/
+coverage/
+*.log
+.DS_Store
+
+# Local credentials and machine-specific WeChat DevTools settings
+config.json
+.env
+.env.*
+!.env.example
+project.private.config.json
+
+# Agent state, historical snapshots and generated artifacts
+.agents/
+.snapshots/
+.superpowers/
+.system_generated/
+artifacts/
+output/
+tmp/
+research/
+
+# Local preview/login material and early document-generation scratch files
+preview.png
+preview-info.json
+qiaocai-preview-*.png
+qiaocai-preview-*.json
+qiaocai-upload-info.json
+wechat-login-qr.png
+template.docx
+doc_content.txt
+doc_text.txt
+extract_doc.py
+generate_doc.py
+test-logic.js
+prompt_draft.md
+*.tsbuildinfo

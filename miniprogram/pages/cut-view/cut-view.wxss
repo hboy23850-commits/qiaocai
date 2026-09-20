@@ -1,0 +1,9 @@
+.canvas-wrap { margin: 0 16px 16px; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08); background: white; }
+.tool-banner { margin: 0 16px 12px; background: #FFFFFF; border-left: 4px solid #185C37; border-radius: 6px; padding: 10px 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
+.tool-title { font-size: 13px; font-weight: 600; color: #185C37; margin-bottom: 4px; }
+.safety-tip { font-size: 11px; color: #D9531E; line-height: 1.4; }
+.step-desc-bar { padding: 10px 16px 4px; font-size: 13px; color: #333333; line-height: 1.5; font-weight: 500; }
+.step-desc-text { color: #185C37; }
+.step-controls { display: flex; justify-content: space-around; padding: 12px 16px; background: white; }
+.grid-container { margin: 0 16px; background: white; border-radius: 8px; overflow: hidden; }
+.share-btn { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; z-index: 10; }

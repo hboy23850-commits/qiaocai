@@ -1,0 +1,51 @@
+<view class="container">
+  <!-- 个人材料库 -->
+  <t-cell-group theme="card" class="mb-10">
+    <t-cell
+      title="我的材料与余料"
+      description="登记实际尺寸，每张材料对应一个实物编号"
+      bordered="{{false}}"
+    >
+      <view slot="note" class="header-action-wrap">
+        <t-button theme="primary" size="small" variant="outline" bind:tap="showAddPopup">登记材料</t-button>
+      </view>
+    </t-cell>
+  </t-cell-group>
+
+  <view class="stock-tenant-notice personal-notice mb-20">
+    <view class="notice-content">
+      <t-icon name="info-circle" size="16px" color="#777777" />
+      <text class="notice-text">余料仅在制作完成并填写实测尺寸后入库；方案草稿不会扣减材料。</text>
+    </view>
+  </view>
+
+  <t-tabs defaultValue="{{0}}" bind:change="onChangeTab" sticky>
+    <t-tab-panel wx:for="{{materials}}" wx:key="*this" label="{{item}}" value="{{index}}" />
+  </t-tabs>
+
+  <view class="list">
+    <view class="empty-state" wx:if="{{displayStocks.length === 0}}">
+      <t-icon name="info-circle" size="48" color="#ddd" />
+      <view>暂无该类材料</view>
+    </view>
+    <block wx:else>
+      <t-swipe-cell wx:for="{{displayStocks}}" wx:key="_id" class="stock-swipe">
+        <t-cell
+          title="{{item.code || '未知编号'}}"
+          description="{{item.width/10}}mm × {{item.height/10}}mm (单价: {{item.group.pricePerSqm || 0}}元/㎡)"
+        >
+          <view slot="note" class="stock-tags-row">
+            <t-tag theme="{{item.isOffcut ? 'danger' : 'success'}}" variant="light" size="small" style="margin-right:4px;">
+              {{item.isOffcut ? '余料回收' : '整板'}}
+            </t-tag>
+            <t-tag theme="primary" variant="outline" size="small">{{item.group.thicknessMm}}mm</t-tag>
+          </view>
+        </t-cell>
+        <view slot="right" class="swipe-right-btn" bind:tap="deleteStock" data-id="{{item._id}}">删除</view>
+      </t-swipe-cell>
+    </block>
+  </view>
+
+  <t-dialog id="t-dialog" />
+  <t-toast id="t-toast" />
+</view>

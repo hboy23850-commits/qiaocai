@@ -1,0 +1,185 @@
+<view class="workbench-container">
+  <!-- 顶部导航 Tabs -->
+  <t-tabs value="{{currentTab}}" bind:change="onTabChange" sticky>
+    <t-tab-panel label="📐 参数模板" value="template" />
+    <t-tab-panel label="✏️ 自由绘制" value="draw" />
+    <t-tab-panel label="📷 拍照识别" value="photo" />
+    <t-tab-panel label="📂 SVG导入" value="svg" />
+  </t-tabs>
+
+  <!-- Canvas 预览与交互主画板 -->
+  <view class="canvas-section">
+    <canvas
+      type="2d"
+      id="workbenchCanvas"
+      class="wb-canvas"
+      bindtouchstart="onTouchStart"
+      bindtouchmove="onTouchMove"
+      bindtouchend="onTouchEnd"
+    ></canvas>
+    
+    <!-- 几何信息浮层 -->
+    <view class="geo-badge-bar">
+      <t-tag theme="primary" size="small" variant="dark">{{shapeKindName}}</t-tag>
+      <text class="geo-info-text">宽: {{geoWidthMm}}mm × 高: {{geoHeightMm}}mm | 顶点: {{vertexCount}} | 面积: {{geoAreaMm2}}mm²</text>
+    </view>
+  </view>
+
+  <!-- TAB 1: 9 种参数化模板 -->
+  <view class="tab-content" wx:if="{{currentTab === 'template'}}">
+    <view class="template-grid">
+      <view
+        wx:for="{{templateList}}"
+        wx:key="kind"
+        class="tpl-item {{selectedKind === item.kind ? 'tpl-active' : ''}}"
+        bindtap="selectTemplateKind"
+        data-kind="{{item.kind}}"
+      >
+        <text class="tpl-icon">{{item.icon}}</text>
+        <text class="tpl-name">{{item.name}}</text>
+      </view>
+    </view>
+
+    <!-- 动态参数调节卡片 -->
+    <t-cell-group theme="card" class="param-card">
+      <block wx:if="{{selectedKind === 'RECT'}}">
+        <t-input label="长 (mm)" type="digit" value="{{tplParams.width}}" data-key="width" bind:change="updateTplParam" align="right" />
+        <t-input label="宽 (mm)" type="digit" value="{{tplParams.height}}" data-key="height" bind:change="updateTplParam" align="right" />
+      </block>
+      <block wx:if="{{selectedKind === 'ROUNDED_RECT'}}">
+        <t-input label="长 (mm)" type="digit" value="{{tplParams.width}}" data-key="width" bind:change="updateTplParam" align="right" />
+        <t-input label="宽 (mm)" type="digit" value="{{tplParams.height}}" data-key="height" bind:change="updateTplParam" align="right" />
+        <t-input label="圆角半径 (mm)" type="digit" value="{{tplParams.radius}}" data-key="radius" bind:change="updateTplParam" align="right" />
+      </block>
+      <block wx:if="{{selectedKind === 'CIRCLE'}}">
+        <t-input label="直径 (mm)" type="digit" value="{{tplParams.diameter}}" data-key="diameter" bind:change="updateTplParam" align="right" />
+      </block>
+      <block wx:if="{{selectedKind === 'ELLIPSE'}}">
+        <t-input label="X轴半径 (mm)" type="digit" value="{{tplParams.rx}}" data-key="rx" bind:change="updateTplParam" align="right" />
+        <t-input label="Y轴半径 (mm)" type="digit" value="{{tplParams.ry}}" data-key="ry" bind:change="updateTplParam" align="right" />
+      </block>
+      <block wx:if="{{selectedKind === 'TRIANGLE'}}">
+        <t-input label="底边 (mm)" type="digit" value="{{tplParams.base}}" data-key="base" bind:change="updateTplParam" align="right" />
+        <t-input label="高度 (mm)" type="digit" value="{{tplParams.height}}" data-key="height" bind:change="updateTplParam" align="right" />
+      </block>
+      <block wx:if="{{selectedKind === 'REGULAR_POLYGON'}}">
+        <t-input label="边数" type="number" value="{{tplParams.sides}}" data-key="sides" bind:change="updateTplParam" align="right" />
+        <t-input label="外接半径 (mm)" type="digit" value="{{tplParams.radius}}" data-key="radius" bind:change="updateTplParam" align="right" />
+      </block>
+      <block wx:if="{{selectedKind === 'L_SHAPE'}}">
+        <t-input label="总宽 W1 (mm)" type="digit" value="{{tplParams.w1}}" data-key="w1" bind:change="updateTplParam" align="right" />
+        <t-input label="总高 H1 (mm)" type="digit" value="{{tplParams.h1}}" data-key="h1" bind:change="updateTplParam" align="right" />
+        <t-input label="横柄宽 W2 (mm)" type="digit" value="{{tplParams.w2}}" data-key="w2" bind:change="updateTplParam" align="right" />
+        <t-input label="竖柄高 H2 (mm)" type="digit" value="{{tplParams.h2}}" data-key="h2" bind:change="updateTplParam" align="right" />
+      </block>
+      <block wx:if="{{selectedKind === 'ARCH'}}">
+        <t-input label="基底宽 (mm)" type="digit" value="{{tplParams.width}}" data-key="width" bind:change="updateTplParam" align="right" />
+        <t-input label="总高 (mm)" type="digit" value="{{tplParams.height}}" data-key="height" bind:change="updateTplParam" align="right" />
+        <t-input label="拱高 (mm)" type="digit" value="{{tplParams.archHeight}}" data-key="archHeight" bind:change="updateTplParam" align="right" />
+      </block>
+      <block wx:if="{{selectedKind === 'STAR'}}">
+        <t-input label="角数" type="number" value="{{tplParams.points}}" data-key="points" bind:change="updateTplParam" align="right" />
+        <t-input label="外半径 (mm)" type="digit" value="{{tplParams.outerRadius}}" data-key="outerRadius" bind:change="updateTplParam" align="right" />
+        <t-input label="内半径 (mm)" type="digit" value="{{tplParams.innerRadius}}" data-key="innerRadius" bind:change="updateTplParam" align="right" />
+      </block>
+    </t-cell-group>
+  </view>
+
+  <!-- TAB 2: 自由绘制 -->
+  <view class="tab-content" wx:if="{{currentTab === 'draw'}}">
+    <view class="draw-toolbar">
+      <t-button size="small" variant="outline" icon="rollback" bindtap="drawUndo" disabled="{{drawHistoryIndex <= 0}}">撤销</t-button>
+      <t-button size="small" variant="outline" icon="refresh" bindtap="drawRedo" disabled="{{drawHistoryIndex >= drawHistory.length - 1}}">重做</t-button>
+      <t-button size="small" theme="{{isClosed ? 'success' : 'primary'}}" bindtap="toggleClosePolygon">{{isClosed ? '已闭合多边形' : '点此首尾闭合'}}</t-button>
+      <t-button size="small" variant="dashed" theme="danger" bindtap="clearDraw">清空画布</t-button>
+    </view>
+    <t-cell-group theme="card" style="margin-top: 10px;">
+      <t-cell title="45°/水平/垂直智能吸附">
+        <t-switch slot="note" value="{{enableSnap}}" bind:change="toggleSnap" />
+      </t-cell>
+      <t-cell title="操作提示" note="点击添加节点，拖动节点微调" leftIcon="bulletpoint" />
+    </t-cell-group>
+    <view class="tip-bar" wx:if="{{selfIntersecting}}">
+      <text class="warn-text">⚠️ 检测到多边形自相交，排料前请微调节点以避免重叠</text>
+    </view>
+  </view>
+
+  <!-- TAB 3: 拍照轮廓识别 -->
+  <view class="tab-content" wx:if="{{currentTab === 'photo'}}">
+    <view class="photo-actions">
+      <t-button theme="primary" icon="camera" block bindtap="choosePhoto">拍摄/选择实物图片</t-button>
+    </view>
+    <t-cell-group theme="card" style="margin-top: 10px;">
+      <t-input label="主体实际宽度" type="digit" value="{{photoKnownWidthMm}}" suffix="mm" align="right" bind:change="onPhotoWidthChange" tips="用于把图片像素换算成真实尺寸" />
+      <t-cell title="自适应分割阈值: {{photoThreshold}}">
+        <view slot="note" style="width: 140px;">
+          <t-slider min="10" max="240" value="{{photoThreshold}}" bind:change="onThresholdChange" />
+        </view>
+      </t-cell>
+      <t-cell title="顶点精简容差: {{dpTolerance}}">
+        <view slot="note" style="width: 140px;">
+          <t-slider min="1" max="15" value="{{dpTolerance}}" bind:change="onToleranceChange" />
+        </view>
+      </t-cell>
+    </t-cell-group>
+    <view class="tip-bar">
+      <text>💡 将物体放在对比明显的纯色背景上，先填写实际宽度再选图。提取后会进入手动校正，可拖动节点修正轮廓。</text>
+    </view>
+  </view>
+
+  <!-- TAB 4: SVG 导入 -->
+  <view class="tab-content" wx:if="{{currentTab === 'svg'}}">
+    <view class="svg-input-wrap">
+      <t-textarea
+        value="{{svgCode}}"
+        placeholder="在此粘贴 SVG 代码（含 <path>、<polygon> 等图形标签）"
+        maxlength="5000"
+        autosize
+        bind:change="onSvgInput"
+      />
+      <view style="margin-top: 10px; display: flex; gap: 8px;">
+        <t-button theme="primary" size="small" block bindtap="parseSvg">解析并离散化曲线</t-button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 零件旋转策略与数量设置 -->
+  <t-cell-group theme="card" style="margin-top: 14px; margin-bottom: 90px;" title="排料工艺设定">
+    <t-input label="零件名称" value="{{partName}}" bind:change="onNameChange" placeholder="如: 展签异形正面" />
+    <t-cell title="制作数量">
+      <t-stepper slot="note" value="{{partQuantity}}" min="1" max="20" bind:change="onQuantityChange" />
+    </t-cell>
+    <t-cell title="排料旋转规则">
+      <view slot="note" class="rot-policy-selector">
+        <t-tag
+          theme="{{rotationPolicy === 'LOCKED' ? 'primary' : 'default'}}"
+          variant="{{rotationPolicy === 'LOCKED' ? 'dark' : 'outline'}}"
+          bindtap="setRotPolicy"
+          data-policy="LOCKED"
+        >锁定</t-tag>
+        <t-tag
+          theme="{{rotationPolicy === 'RIGHT_ANGLE' ? 'primary' : 'default'}}"
+          variant="{{rotationPolicy === 'RIGHT_ANGLE' ? 'dark' : 'outline'}}"
+          bindtap="setRotPolicy"
+          data-policy="RIGHT_ANGLE"
+        >90°直角</t-tag>
+        <t-tag
+          theme="{{rotationPolicy === 'FREE_15' ? 'primary' : 'default'}}"
+          variant="{{rotationPolicy === 'FREE_15' ? 'dark' : 'outline'}}"
+          bindtap="setRotPolicy"
+          data-policy="FREE_15"
+        >15°自由</t-tag>
+      </view>
+    </t-cell>
+  </t-cell-group>
+
+  <!-- 底部吸底保存按钮 -->
+  <view class="footer-btn">
+    <t-button theme="primary" block size="large" icon="check" bindtap="confirmShape">
+      完成并存入零件清单
+    </t-button>
+  </view>
+
+  <t-dialog id="t-dialog" />
+  <t-toast id="t-toast" />
+</view>

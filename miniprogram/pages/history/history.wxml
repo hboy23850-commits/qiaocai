@@ -1,0 +1,76 @@
+<view class="container">
+  <view class="hero">
+    <view class="title">项目管理与历史流水</view>
+    <view class="desc">管理保存的设计工程，新建、复制、同步云端与回溯加工历史。</view>
+  </view>
+
+  <t-tabs value="{{currentTab}}" bind:change="onTabChange" sticky>
+    <t-tab-panel label="📁 我的工程项目" value="projects" />
+    <t-tab-panel label="📋 加工执行流水" value="history" />
+  </t-tabs>
+
+  <!-- TAB 1: 工程项目管理 -->
+  <view wx:if="{{currentTab === 'projects'}}" style="padding: 14px 16px 80px;">
+    <!-- 快捷操作栏 -->
+    <view style="display: flex; gap: 8px; margin-bottom: 14px;">
+      <t-button theme="primary" icon="add" style="flex: 1;" bindtap="createNewProject">新建工程</t-button>
+      <t-button theme="primary" variant="outline" icon="refresh" bindtap="syncCloud">云端同步</t-button>
+    </view>
+
+    <view wx:if="{{projects.length === 0}}" style="text-align: center; padding: 40px; color: #999;">
+      <t-icon name="folder-open" size="48" color="#ccc" />
+      <view style="margin-top: 8px;">暂无工程项目，点击上方“新建工程”创建</view>
+    </view>
+
+    <!-- 项目卡片列表 -->
+    <view wx:for="{{projects}}" wx:key="_id" class="project-card" style="background: white; border-radius: 10px; padding: 14px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+      <view style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+        <view style="font-size: 15px; font-weight: bold; color: #185C37;">{{item.name}}</view>
+        <t-tag theme="success" variant="light" size="small">自动保存</t-tag>
+      </view>
+      <view style="font-size: 12px; color: #777; margin-bottom: 10px;">
+        零件数: {{item.partGroupsCount || 0}} 组 | 更新于: {{item.updatedTimeStr}}
+      </view>
+      <view style="display: flex; gap: 6px; justify-content: flex-end; border-top: 1px solid #f0f0f0; padding-top: 8px;">
+        <t-button size="extra-small" theme="primary" bindtap="openProject" data-project="{{item}}">打开编辑</t-button>
+        <t-button size="extra-small" variant="outline" bindtap="copyProject" data-id="{{item._id || item.id}}">复制</t-button>
+        <t-button size="extra-small" variant="outline" bindtap="showRename" data-id="{{item._id || item.id}}">重命名</t-button>
+        <t-button size="extra-small" variant="dashed" theme="danger" bindtap="deleteProject" data-id="{{item._id || item.id}}">删除</t-button>
+      </view>
+    </view>
+  </view>
+
+  <!-- TAB 2: 加工记录流水 -->
+  <view wx:if="{{currentTab === 'history'}}" style="padding: 14px 16px 80px;">
+    <t-grid column="3" border="{{false}}" class="mb-20">
+      <t-grid-item text="总订单数" description="{{history.length}}" />
+      <t-grid-item text="产出零件" description="{{totalParts}}" />
+      <t-grid-item text="预估价值(元)" description="{{totalCost}}" />
+    </t-grid>
+
+    <view wx:if="{{history.length === 0}}" style="text-align: center; padding: 40px; color: #999;">
+      <t-icon name="history" size="48" color="#ddd" />
+      <view style="margin-top: 8px;">暂无加工流水记录</view>
+    </view>
+
+    <t-cell-group theme="card" class="mb-20" wx:else>
+      <t-cell wx:for="{{history}}" wx:key="_id" title="项目执行记录 {{index+1}}" description="零件数: {{item.partsCount || 0}} | 价值: ¥{{item.costEstimate || 0}}" note="{{item.createdAt}}" hover />
+    </t-cell-group>
+  </view>
+
+  <!-- 重命名弹窗 -->
+  <t-dialog
+    visible="{{renameVisible}}"
+    title="重命名项目"
+    confirm-btn="确认"
+    cancel-btn="取消"
+    bind:confirm="confirmRename"
+    bind:cancel="cancelRename"
+  >
+    <view slot="content" style="padding-top: 10px;">
+      <t-input value="{{newProjectName}}" placeholder="新工程名称" bind:change="onRenameInput" />
+    </view>
+  </t-dialog>
+
+  <t-toast id="t-toast" />
+</view>

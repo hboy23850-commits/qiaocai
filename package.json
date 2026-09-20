@@ -1,0 +1,21 @@
+{
+  "name": "qiaocai-workspace",
+  "version": "1.0.0",
+  "private": true,
+  "description": "巧裁——面向校园手工与模型制作的余料复用及可调整尺寸排料助手",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "typecheck": "tsc --build && tsc -p miniprogram/tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "build": "node scripts/build.mjs && tsc -p miniprogram/tsconfig.json",
+    "test:demo": "vitest run tests/integration/a4-demo.test.ts"
+  },
+  "devDependencies": {
+    "miniprogram-api-typings": "^5.2.3",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}
