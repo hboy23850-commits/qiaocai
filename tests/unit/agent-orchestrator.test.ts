@@ -2,7 +2,7 @@ import { createRequire } from 'node:module';
 import { describe, expect, it } from 'vitest';
 
 const require = createRequire(import.meta.url);
-const { parseModelEnvelope, SYSTEM_PROMPT } = require('../../cloudfunctions/api/agent.js');
+const { createToolDefinitions, parseModelEnvelope, SYSTEM_PROMPT } = require('../../cloudfunctions/api/agent.js');
 
 describe('CloudBase 智能体编排边界', () => {
   it('接受带代码围栏的结构化模型响应', () => {
@@ -14,6 +14,15 @@ describe('CloudBase 智能体编排边界', () => {
   it('拒绝非 JSON 或缺少用户回复的响应', () => {
     expect(() => parseModelEnvelope('随便说一句')).toThrow('结构化JSON');
     expect(() => parseModelEnvelope('{"status":"SOLVED"}')).toThrow('结构不完整');
+  });
+
+  it('工具 Schema 明确使用求解器的 0.1mm 零件字段', () => {
+    const tools = createToolDefinitions('schema-test', { stocks: [], toolRuns: [], draft: null, solverOutput: null, candidates: [] });
+    const validateTool = tools.find((tool: any) => tool.name.startsWith('validate_requirement_'));
+    const partSchema = validateTool.parameters.properties.draft.properties.partGroups.items;
+    expect(partSchema.required).toEqual(expect.arrayContaining(['targetWidth', 'targetHeight', 'quantity', 'allowRotation']));
+    expect(partSchema.properties.targetWidth.description).toContain('1050');
+    expect(partSchema.properties.widthMm).toBeUndefined();
   });
 
   it('系统提示限制写入、越权和自行编造指标', () => {

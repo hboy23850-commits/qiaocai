@@ -10,6 +10,6 @@ export interface AgentToolRun { tool: 'list_available_stocks' | 'validate_requir
 export interface AgentTurnResponse {
   sessionId: string; status: AgentStatus; assistantMessage: string; draft?: AgentDraft;
   clarification?: { field: string; question: string }; candidateSummary?: AgentCandidateSummary[];
-  toolRuns: AgentToolRun[]; model: { provider: 'cloudbase'; id: string; aiGenerated: true }; draftVersion: number;
+  toolRuns: AgentToolRun[]; model: { provider: 'cloudbase' | 'deepseek'; id: string; aiGenerated: boolean; usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number }; durationMs?: number; degraded?: boolean }; draftVersion: number;
 }
 export interface AgentDraftValidation { valid: boolean; missingFields: string[]; errors: string[]; }

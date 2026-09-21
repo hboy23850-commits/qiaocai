@@ -458,7 +458,24 @@ const controllers = {
     }
 
     const existingRes = await db.collection('stocks').where(demoQuery).get();
-    const stocks = (existingRes.data || []).slice(0, 2);
+    let existingStocks = (existingRes.data || []);
+
+    // Step3 修复：检测并删除单位错误的旧演示材料（width<=500 表明存的是毫米而非 0.1mm 整数）
+    // A4 正确值为 width=2100, height=2970；若 width<=500 则判定为旧毫米数据
+    const wrongUnitStocks = existingStocks.filter((s) => (s.width || 0) <= 500 || (s.height || 0) <= 500);
+    if (wrongUnitStocks.length > 0) {
+      console.log('[PrepareDemo] 发现单位错误的旧演示材料，数量:', wrongUnitStocks.length, '；将删除后重建。');
+      for (const s of wrongUnitStocks) {
+        const docId = s._id || s.id;
+        if (docId) {
+          await db.collection('stocks').doc(docId).remove().catch(() => {});
+        }
+      }
+      // 重新过滤，只保留单位正确的
+      existingStocks = existingStocks.filter((s) => (s.width || 0) > 500 && (s.height || 0) > 500);
+    }
+
+    const stocks = existingStocks.slice(0, 2);
     while (stocks.length < 2) {
       const index = stocks.length + 1;
       const stock = {

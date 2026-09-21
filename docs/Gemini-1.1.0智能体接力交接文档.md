@@ -1,410 +1,364 @@
-# 《巧裁》1.1.0 AI 制作智能体——Gemini 接力交接文档
+# 《巧裁》1.1.0 DeepSeek 制作智能体——Gemini 接力交接文档
 
-> 交接日期：2026-09-20
-> 项目目录：`D:\\Codex\\computerapp`
-> GitHub：`https://github.com/hboy23850-commits/qiaocai`（私有仓库）
-> 分支：`main`
-> 当前远端最后提交：`7173fd5 fix: make A B C shape input usable`
-> AppID：`wx4024c822e432111f`
-> CloudBase 环境：`cloud1-d5gnrj8plf8520129`
-> 微信开发者工具 CLI：`D:\\微信web开发者工具\\cli.bat`
-> CLI 端口：`33560`；自动化 WebSocket：`ws://127.0.0.1:9527`
+> 交接日期：2026-09-21  
+> 工作目录：`D:\\Codex\\computerapp`  
+> 仓库：`https://github.com/hboy23850-commits/qiaocai`  
+> 分支：`main`  
+> 当前 HEAD：`69b978fdaf5f62122ade75e5dabaf1132a832970`  
+> AppID：`wx4024c822e432111f`  
+> CloudBase 环境：`cloud1-d5gnrj8plf8520129`  
+> 微信开发者工具 CLI：`D:\\微信web开发者工具\\cli.bat`  
+> IDE 端口：`33560`；自动化端口：`ws://127.0.0.1:9527`
 
----
+## 一、直接复制给 Gemini 的总指令
 
-## 一、直接交给 Gemini 的总指令
+<role>
+你是接手微信小程序《巧裁》的高级全栈工程师。你必须在现有仓库中继续实施、调试、测试、部署和记录，不能只给建议或重新规划。先读取本交接文档、AGENTS.md、相关技能文件和实际代码，以代码、线上配置和命令结果为准。
+</role>
 
-你现在接手微信小程序《巧裁》的 1.1.0 AI 制作智能体升级。请在现有仓库中直接继续实施、测试、部署、记录和提交，不要只给方案。先读取本交接文档与实际代码，以代码和命令结果为准；不得把文档中的计划当成已完成事实。
+<objective>
+完成《巧裁》1.1.0 AI 制作智能体的真实 DeepSeek V4.1 验收：自然语言需求经过多轮补全后，模型依次使用四个只读工具，确定性求解器返回至少一个 validationPassed=true 的候选；用户确认后重新查询库存并调用正式 solvePlan，进入方案比较和裁切页。随后同步文档，运行全量测试、构建、官方预览，提交并推送代码，最后上传微信开发版本。禁止提交审核或正式发布。
+</objective>
 
-你的目标是把当前“已实现但尚未完整云端验收”的状态推进到可复现的 1.1.0 开发版本：
+<non_negotiable_rules>
+1. 不得在源码、文档、测试、日志、命令输出、提交记录或聊天回复中显示 DeepSeek API 密钥。
+2. 密钥已经配置在线上 api 云函数环境变量 QIAOCAI_DEEPSEEK_API_KEY。不要要求用户再次粘贴。需要重新部署时必须先保留该变量；跟踪文件 cloudbaserc.json 故意不包含密钥。
+3. 用户曾在聊天中粘贴密钥。完成接入后提醒用户去 DeepSeek 控制台轮换密钥，并用新值更新线上环境变量。
+4. 大模型仅负责理解、追问、调用工具和解释。利用率、材料张数、坐标和裁切步骤只能来自确定性求解器及独立校验器。
+5. 四个工具保持只读：list_available_stocks、validate_requirement、solve_and_compare、build_cut_summary。模型不得保存工程、修改库存、确认候选或消耗材料。
+6. 精确尺寸默认锁定。用户未明确授权时禁止缩放。只有 validationPassed=true 才能显示确认按钮。
+7. 用户确认时必须重新查询库存并调用正式 solvePlan；不能把智能体草稿直接作为正式方案。
+8. 不保存或展示模型隐藏推理。DeepSeek 请求保持 thinking.type=disabled。
+9. 模型超时、限额、非法结构或不可用时必须进入 DEGRADED，草稿只能人工核对。
+10. 实物实验、照片、误差和三名体验者结果必须由真人完成，不得伪造。
+11. 不要执行 npm audit fix --force，不要发布正式版，不要提交微信审核。
+</non_negotiable_rules>
 
-1. 将线上 `api` 云函数超时从 3 秒提升到至少 20 秒，保留现有配置和环境变量。
-2. 确认 CloudBase AI+ 已开通；优先验证 `deepseek-v4-flash`，不可用时固定切换为 `hunyuan-turbos-latest`，并把实际模型同步到界面、文档和测试记录。
-3. 通过真实云函数完成至少一次多轮工具调用，并记录模型 ID、日期、Token 用量、响应时间、工具顺序和最终状态。不得把本地模拟或规则降级当作真实 AI 证据。
-4. 用微信开发者工具完成首页进入智能体、至少三轮对话、工具证据、草稿确认、重新正式求解、方案比较和裁切页的真实点击验收。
-5. 修复验收中发现的问题，保持全量自动化测试、构建和官方预览通过。
-6. 更新设计文档、README、进度记录和交付材料，使其只陈述真实完成情况。
-7. 完成后提交并推送 GitHub；最后上传微信开发版本 `1.1.0`。不要发布正式版或提交审核，除非用户明确要求。
-8. 实物实验、三名体验者、照片和测量数据必须由真人完成。你只能准备记录表、校验数据和整理材料，不得生成或伪造实验结果。
+<working_method>
+- 先复现当前失败，再定位根因。
+- 修改行为前先写会失败的测试；确认失败后实施最小修复，再运行相关测试。
+- 每一步保留可核验输出。不要把降级链路记成真实 AI 成功。
+- 遇到登录、扫码或真实实物操作时，先完成其余工作，再只向用户说明最小必要动作。
+</working_method>
 
-执行过程中要持续推进。遇到需要账号扫码、控制台授权或真实实物操作时，先完成所有不依赖用户的工作，再清楚指出用户只需完成的最小动作。
+<acceptance>
+- 真实返回 provider=deepseek、id=deepseek-flash、aiGenerated=true，并记录 Token 用量和响应时间。
+- 一次完整轮次的工具证据包含四个只读工具，validate_requirement=true，solve_and_compare=true，build_cut_summary=true。
+- 至少一个候选 validationPassed=true。
+- 确认前不新建 plan/execution、不消耗 stock。
+- 确认后重新查询库存并正式求解，进入 compare 和 cut-view；结案前材料仍为 AVAILABLE。
+- 端到端脚本严格模式通过，控制台无未捕获异常，生成新的机器可读证据和截图。
+- 全量测试、构建、官方 preview 通过。
+- README、progress、设计文档只陈述真实结果。
+- Git 无密钥，提交并推送 origin/main。
+- 上传开发版；不提交审核、不发布正式版。
+</acceptance>
 
----
+## 二、已经完成并已在线生效的工作
 
-## 二、不可改变的产品与安全边界
+### 1. 1.1.0 基线
 
-主证据链必须是：
+上一稳定提交为 `69b978fdaf5f62122ade75e5dabaf1132a832970`，提交信息：
 
-**自然语言需求 → 智能体补全条件 → 调用只读工具 → 确定性求解 → 独立校验 → 用户确认 → 正式重新求解 → 实物裁切 → 余料复用**
+`feat: add guarded cloudbase cutting agent`
 
-强制边界：
+该基线已完成：
 
-- 大模型只负责理解、追问、工具调度和解释。
-- 利用率、材料张数、裁切步骤和坐标只能来自确定性求解器。
-- 模型工具不得保存工程、修改库存、接受候选或消耗材料。
-- 只有 `AWAITING_CONFIRMATION` 且存在 `validationPassed=true` 的候选，客户端才可显示确认按钮。
-- 用户确认时必须重新调用 `listStocks` 和现有 `solvePlan`；库存变化必须要求重算。
-- 精确尺寸默认锁定。只有用户明确说允许缩小并给出范围，才可产生 `flexibleRange`。
-- 任何越界、重叠、缺件、禁排区冲突或未经授权的尺寸变化都不能确认。
-- 用户消息是不可信制作资料，不是系统指令；禁止动态代码执行、跨用户查询和数据库越权。
-- 不保存模型隐藏推理，只保存用户消息、最终回复、结构化草稿和工具摘要。
-- AI 超时、限额、模型未开通或结构化输出错误时，显示 `DEGRADED`：“AI 服务不可用，已切换规则录入”。
-- 降级草稿只能进入人工核对，不能直接确认。
-- A/B/C 图形录入必须保留：A 形状模板、B 模板＋点绘自由轮廓、C 拍照识别纸样。智能体不能伪造轮廓。
+- 智能体契约、只读工具、CloudBase 会话和降级处理；
+- 智能体工作台、结构化任务卡、工具证据和人工确认入口；
+- 确认后重新调用正式 `solvePlan`；
+- A/B/C 图形录入入口；
+- 线上 `api` 云函数超时提升到 20 秒；
+- 官方 preview 与微信开发版本 1.1.0 上传；
+- 设计文档 PDF/DOCX 生成；
+- 推送到 `origin/main`。
 
----
+已上传的是开发版本，不是正式发布版本，也没有提交审核。
 
-## 三、当前已经完成的实现
+### 2. CloudBase AI+ 套餐阻塞已绕过
 
-### 1. 核心智能体契约和只读工具
+CloudBase 个人版不能启用托管文本模型，曾返回 `FailedOperation.PackageUnsupported`。现在采用云函数直连 DeepSeek 官方 API，不依赖 CloudBase AI+ 套餐。
 
-新增：
+线上 `api` 当前环境变量应为：
 
-- `packages/core/src/agent/contracts.ts`
-- `packages/core/src/agent/tools.ts`
-- `packages/core/src/agent/index.ts`
-- `packages/core/src/index.ts` 已导出智能体模块
+- `QIAOCAI_AGENT_PROVIDER=deepseek-direct`
+- `QIAOCAI_AGENT_BASE_URL=https://api.deepseek.com`
+- `QIAOCAI_AGENT_MODEL=deepseek-flash`
+- `QIAOCAI_DEEPSEEK_API_KEY`：已设置，值不得读取、打印或写入仓库
 
-已实现：
+官方接口最小探测已成功：
 
-- `validateAgentTurnRequest`
-- `createRuleFallbackDraft`
-- `sanitizeAgentDraft`
-- `validateRequirementDraft`
-- `solveAndCompare`
-- `buildCutSummary`
+- HTTP：200
+- 实际模型：`deepseek-flash`
+- 最小探测 Token：18
+- 日期：2026-09-21
 
-规则包括：单次输入不超过 1000 字；尺寸统一为 0.1 mm 整数标度；最多 20 个零件；材料只保留当前用户可访问且 AVAILABLE 的记录；默认禁止旋转和尺寸调整；只接受明确的 1 mm 或 2 mm 缩小授权。
+### 3. 当前未提交的 DeepSeek 直连实现
 
-### 2. CloudBase 智能体编排
+当前工作树包含以下修改，不能丢弃：
 
-新增 `cloudfunctions/api/agent.js`，并在 `cloudfunctions/api/index.js` 注册 `agentTurn`。
+- `cloudfunctions/api/deepseek-provider.js`：新增 OpenAI 兼容的 DeepSeek 工具调用循环，使用 Node HTTPS，15 秒请求超时。
+- `cloudfunctions/api/agent.js`：按 `QIAOCAI_AGENT_PROVIDER` 选择 DeepSeek 直连或原 CloudBase 路径。
+- `cloudbaserc.json`：非敏感配置切换到 `deepseek-direct`、`https://api.deepseek.com`、`deepseek-flash`。
+- `packages/core/src/agent/contracts.ts`：模型 provider 支持 `deepseek`，模型元数据允许 usage、durationMs、degraded。
+- `tests/unit/deepseek-provider.test.ts`：直连请求、工具白名单、工具次数、推理字段丢弃和只读缓存测试。
+- `tests/unit/agent-orchestrator.test.ts`：工具 Schema 字段测试。
+- `miniprogram/utils/core/agent/contracts.d.ts`：构建生成的类型同步。
 
-实现内容：
+直连实现已具备：
 
-- 依赖 `@cloudbase/node-sdk@3.18.3`
-- 默认模型 `deepseek-v4-flash`，可用环境变量 `QIAOCAI_AGENT_MODEL` 覆盖
-- 四个只读工具：
-  - `list_available_stocks`
-  - `validate_requirement`
-  - `solve_and_compare`
-  - `build_cut_summary`
-- 会话集合 `agent_sessions`，按 OPENID 隔离
-- 最多保留最近 12 条消息
-- 每轮最多 4 次工具调用
-- 15 秒模型请求超时
-- 模型或结构化输出失败时规则降级
-- 会话只保存公开消息、草稿、工具摘要和模型元数据
+- `thinking: { type: 'disabled' }`；
+- Authorization 只在云函数请求头中使用；
+- 未把 `reasoning_content`写入消息或数据库；
+- 未执行未知工具；
+- 每轮最多实际执行四个工具；
+- 同一个只读工具被模型重复请求时返回首次结果缓存，不重复执行业务函数；
+- 另设模型循环上限，防止无限工具循环；
+- 工具 Schema 明确使用 `targetWidth`、`targetHeight`、`quantity`、`allowRotation`，尺寸为 0.1mm 整数；
+- 工具名仍带每次请求随机后缀，避免并发闭包冲突。
 
-注意：该文件已通过语法检查和本地测试，但还没有完成真实 CloudBase AI 多工具调用验收。
+### 4. 已通过的测试
 
-### 3. 小程序智能体工作台
+最近一次完整验证：
 
-新增：
+- 41 个测试文件通过；
+- 268 项测试通过；
+- `npm run build` 通过。
 
-- `miniprogram/pages/agent/agent.ts`
-- `miniprogram/pages/agent/agent.wxml`
-- `miniprogram/pages/agent/agent.wxss`
-- `miniprogram/pages/agent/agent.json`
+新增定向测试最近一次为 4 文件、17 项通过。任何后续修改必须保持这些测试通过，数量可以增加，不能减少或跳过失败项。
 
-并修改：
+## 三、当前真实验收结果与唯一主要阻塞
 
-- `miniprogram/app.json` 注册页面
-- `miniprogram/app.ts` 增加 `agentDraft`
-- 首页增加自然语言输入、A4 与 KT 两个预填样例入口
-- `requirement` 页支持接收降级草稿进行人工核对
+微信开发者工具自动化已经真实调用线上 DeepSeek。最新完整到达第三轮的输出为：
 
-工作台展示五段状态、结构化任务卡、工具证据、模型信息、独立校验候选和降级提示。“确认并正式求解”会重新查询库存并调用正式 `solvePlan`，然后进入现有方案比较页。
+- provider：`deepseek`
+- model：`deepseek-flash`
+- aiGenerated：`true`
+- 第三轮 Token：prompt 7380、completion 518、total 7898
+- 第三轮耗时：4793ms
+- 用户条件：8 张、105×70mm、A4 卡纸、不旋转、间距 2mm、精确尺寸、不允许缩小
+- 结构化任务卡：105×70mm、数量 8、禁止旋转、缩小 0mm
+- 工具顺序：
+  1. `list_available_stocks`：成功，查询到 2 块材料
+  2. `validate_requirement`：成功
+  3. `solve_and_compare`：失败，生成 1 个候选但没有通过独立校验
+  4. `build_cut_summary`：失败，0 张材料、0 个裁切步骤
+- 最终状态：`NEEDS_INPUT`
+- 严格端到端验收失败，因为没有 `validationPassed=true` 的候选。
 
-### 4. 本地模拟适配器
+这不是模型接入失败。真实模型、Token、耗时和四工具调用已经出现。当前需要定位确定性求解为何认为“两张 A4 卡纸无法放置 8 个 105×70mm、间距 2mm、不旋转的矩形”。
 
-`miniprogram/utils/cloud-adapter.ts` 已增加本地 `agentTurn`：
+理论上每张 A4 可纵向放 4 个：`4×70 + 3×2 = 286mm ≤ 297mm`，两张可放 8 个；宽度为 `105mm ≤ 210mm`。因此当前结果很可能来自线上库存尺寸标度、材料字段、求解输入或候选校验不一致，而不是需求本身不可行。
 
-- 本地模拟明确标记 `mock-rule-simulator`
-- `aiGenerated=false`
-- `simulated=true`
-- 不写入 plans 或库存
-- `prepareDemo` 可建立两张 A4 材料
+注意：`artifacts/agent-e2e-evidence.json` 仍是较早一次降级验收生成的旧证据。最新严格运行在候选失败处退出，没有覆盖该文件。不得引用旧文件证明最新结果。
 
-不得把该模拟结果用于比赛“真实模型调用”证据。
+## 四、下一步必须按顺序执行
 
-### 5. 新增测试
+### 步骤 1：保护当前现场
 
-- `tests/unit/agent-contracts.test.ts`
-- `tests/unit/agent-orchestrator.test.ts`
-- `tests/unit/agent-ui-entry.test.ts`
-- `tests/integration/agent-flow.test.ts`
-
-当前全量结果：
-
-- 40 个测试文件通过
-- 262 项测试通过
-- `npm run build` 通过
-- 微信开发者工具官方 preview 通过
-- 预览包体：594.6 KB
-- 预览二维码：`artifacts/preview-1.1.0.png`
-- 预览信息：`artifacts/preview-1.1.0.json`
-
-### 6. 已准备但尚未填真实数据的材料
-
-- `docs/智能体实物与用户测试记录表.md`
-- `docs/演示视频脚本-1.1.0.md`
-- `docs/作品简介-1.1.0.txt`
-
-这些记录表是空模板，不能在没有真实实验时填写结果。
-
----
-
-## 四、线上状态与当前阻塞点
-
-### 已部署
-
-微信开发者工具 CLI 已将当前 `cloudfunctions/api` 部署到：
-
-`cloud1-d5gnrj8plf8520129`
-
-部署结果：
-
-- success：true
-- filesCount：52
-- packSize：141.9 KB
-- 状态：Active
-- 运行时：Nodejs16.13
-
-### 未完成
-
-线上 `api` 当前超时仍为 **3 秒**，不满足模型调用要求。真实 AI 会话尚未验证。AI+ 是否已开通、`deepseek-v4-flash` 是否对该环境开放，也尚未证实。
-
-CloudBase 官方 CLI `3.8.3` 已经由用户完成设备授权，账号可见目标环境。接手后不要重复要求用户登录，先直接执行环境查询确认凭证仍有效。
-
----
-
-## 五、接手后的第一组命令
-
-在 PowerShell 中进入：
+运行：
 
 ```powershell
 Set-Location D:\Codex\computerapp
+git status --short
+git diff --check
 ```
 
-### 1. 确认 CloudBase CLI 登录
+不要 reset、checkout 或清理当前未提交修改。不要运行任何会打印线上环境变量完整值的命令。
+
+### 步骤 2：先复现本地数学场景
+
+为 `solveAndCompare` 增加一个明确测试：
+
+- 两块 stock；
+- 每块 `width=2100`、`height=2970`；
+- 8 个零件；
+- `targetWidth=1050`、`targetHeight=700`；
+- `allowRotation=false`；
+- `kerfMm=2`；
+- 无 `flexibleRange`；
+- 期望至少一个完整候选且 `validationPassed=true`；
+- 期望尺寸未改变。
+
+先观察测试是否通过。如果本地失败，修求解器或校验器；如果本地通过，问题在云端材料数据或模型传参。
+
+### 步骤 3：只读核对线上材料
+
+安全读取当前 OPENID 可访问的两张材料，只输出以下脱敏字段：
+
+- id 的短哈希或末四位；
+- width、height；
+- status；
+- version；
+- owner/factory 匹配结果。
+
+禁止输出用户身份信息和密钥。重点确认 A4 是否存成 `2100×2970`。如果是 `210×297`，说明数据库沿用了毫米值而求解器要求 0.1mm 标度。
+
+修复策略优先级：
+
+1. 若只有演示数据单位错误，修 `prepareDemo` 或演示数据迁移，并重新生成两张正确的 A4 材料。
+2. 不要在求解器中猜测单位。
+3. 不要静默改写真实用户材料。
+4. 如需迁移，只处理能明确识别为旧演示数据的记录，并记录变更前后数量。
+5. 确认前后材料都保持 `AVAILABLE`。
+
+### 步骤 4：记录候选校验失败原因
+
+当前 `solve_and_compare` 只摘要“生成 1 个候选”，缺少独立校验失败原因。扩展内部诊断：
+
+- 服务端日志或测试证据记录 `isComplete`、`unplacedPartIds.length` 和独立校验错误摘要；
+- UI 不显示敏感数据；
+- 不接受模型提供的校验结论；
+- 不改动候选通过标准。
+
+如果 `validateCandidate` 只返回 valid 而错误详情在其他字段，按实际结构记录。为该诊断增加测试。
+
+### 步骤 5：处理模型最终 JSON 的稳定性
+
+早期真实运行曾出现一次“模型未返回结构化JSON”并正确降级。保持降级边界，同时提高成功率：
+
+- 检查 DeepSeek 官方 `response_format: { type: 'json_object' }` 与 tools 同用的兼容性；
+- 只有官方接口支持时才加入；
+- System Prompt 必须显式包含“json”并给出最终对象字段；
+- 工具调用阶段不得把自然语言当成正式结构；
+- 结构错误仍然 DEGRADED，禁止宽松解析成可确认方案；
+- 为非法 JSON、工具调用后最终 JSON、空 content 增加测试。
+
+### 步骤 6：重新部署时保护密钥
+
+跟踪文件 `cloudbaserc.json` 不包含密钥。直接用它部署可能覆盖线上环境变量，所以部署前必须：
+
+1. 读取现有线上变量名并脱敏确认密钥变量仍存在；
+2. 使用进程环境中的安全值生成 `tmp/cloudbaserc.deepseek.json`；
+3. 临时配置包含全部非敏感变量和密钥变量；
+4. 使用 `--config-file tmp/cloudbaserc.deepseek.json` 部署；
+5. 无论成功失败都删除临时文件和进程环境变量；
+6. 检查 `tmp/cloudbaserc.deepseek.json` 不存在；
+7. 执行 Git 密钥扫描。
+
+不要把密钥复制到本交接文档、`.env.example`、测试夹具或命令日志。若当前进程没有安全密钥值，优先保留线上变量并只更新代码；不要让用户在普通聊天里再次粘贴。
+
+### 步骤 7：重新执行严格端到端验收
+
+确保开发者工具自动化端口开启：
 
 ```powershell
-npx -y -p @cloudbase/cli@latest tcb env list
+& 'D:\微信web开发者工具\cli.bat' auto --project 'D:\Codex\computerapp' --port 33560 --auto-port 9527 --trust-project
 ```
 
-必须能看到 `cloud1-d5gnrj8plf8520129`。
-
-### 2. 拉取线上函数配置，防止覆盖已有环境变量
+执行：
 
 ```powershell
-npx -y -p @cloudbase/cli@latest tcb -e cloud1-d5gnrj8plf8520129 config pull fn api --output cloudbaserc.json
+node scripts/verify-agent-automator.cjs
 ```
 
-读取生成的 `cloudbaserc.json`，确认只有目标环境和 `api`；不要删除线上已有环境变量或配置。
+必须严格通过，不能设置允许降级的开关。成功证据至少包含：
 
-### 3. 把超时更新为 20 秒
+- 三轮对话；
+- `provider=deepseek`；
+- `id=deepseek-flash`；
+- `aiGenerated=true`；
+- Token 用量；
+- 每轮响应时间；
+- 四工具顺序；
+- `validationPassed=true`；
+- 确认按钮出现；
+- 确认后正式重新求解；
+- compare 与 cut-view 页面；
+- 0 个未捕获异常；
+- 新截图和新的 `artifacts/agent-e2e-evidence.json`。
 
-优先使用配置增量更新：
-
-```powershell
-npx -y -p @cloudbase/cli@latest tcb -e cloud1-d5gnrj8plf8520129 config update fn api --timeout 20
-```
-
-然后双重核验：
-
-```powershell
-npx -y -p @cloudbase/cli@latest tcb -e cloud1-d5gnrj8plf8520129 fn detail api
-& 'D:\微信web开发者工具\cli.bat' cloud functions info --env 'cloud1-d5gnrj8plf8520129' --names api --project 'D:\Codex\computerapp' --port 33560 --lang zh
-```
-
-只有两处都显示 timeout ≥ 20 才算完成。
-
-### 4. 检查 AI+ 与模型
-
-先尝试真实 `agentTurn`。如果返回模型未开通、无权限或模型不存在：
-
-- 进入 CloudBase 控制台为目标环境开通 AI+；
-- 启用 `deepseek-v4-flash`；
-- 若该模型不可用，改用 `hunyuan-turbos-latest`；
-- 使用云函数环境变量 `QIAOCAI_AGENT_MODEL` 固定实际模型；
-- 重新部署并把实际模型写入设计文档。
-
-不要通过修改前端假装模型已启用。
-
----
-
-## 六、真实验收建议
-
-新增 `scripts/verify-agent-cloud.cjs`，复用项目已有 `miniprogram-automator`：
-
-1. 连接 `ws://127.0.0.1:9527`。
-2. `reLaunch('/pages/index/index')`。
-3. 点击 `#home-agent-start` 或直接进入 `/pages/agent/agent?demo=a4`。
-4. 准备至少两张 A4 可用材料。
-5. 发送不完整需求，验证 `NEEDS_INPUT`。
-6. 补充尺寸、数量、单位、间距、旋转，完成至少三轮。
-7. 截取结构化任务卡与工具证据。
-8. 检查模型信息中 `aiGenerated=true` 且不是模拟器。
-9. 检查工具顺序与候选 `validationPassed=true`。
-10. 点击 `#agent-confirm`。
-11. 验证再次调用库存和正式 `solvePlan`，进入 `pages/compare/compare`。
-12. 打开裁切页。
-13. 收集 console/exception；有异常就失败退出。
-14. 输出机器可读 JSON：模型 ID、轮数、工具记录、响应耗时、当前页面和截图路径。
-
-同时检查数据库：
-
-- 确认前不得新增 plan、execution 或消耗 stock。
-- 正式求解后允许新增 plan，但 stock 仍是 AVAILABLE。
-- 只有结案后 stock 才能变为 CONSUMED。
-- 重复确认不能重复消耗材料。
-
----
-
-## 七、需要重点复核的实现风险
-
-1. **云函数超时**：当前线上只有 3 秒，是最先处理的问题。
-2. **Node 运行时**：线上为 Nodejs16.13。确认 `@cloudbase/node-sdk@3.18.3` 与 AI 模块可在此运行；如需升级运行时，先验证兼容性再改。
-3. **CloudBase 凭据**：`cloudfunctions/api/agent.js` 使用 `cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })`。必须在真实云函数中验证是否能获得服务身份；失败时依据官方 SDK 文档修正，不要把密钥写入源码。
-4. **工具调用真实性**：当前服务端在模型声称待确认但没有候选时，会执行一次服务端确定性复核。日志和 UI 必须区分“模型实际工具调用”与“服务端防御性复核”，比赛证据至少要有一次真实多工具调用。
-5. **利用率单位**：核心候选摘要中利用率为 0–1，工作台显示时乘 100。修改时避免重复乘 100。
-6. **柔性范围单位**：`flexibleRange.maxShrinkMm` 本身是毫米 1 或 2，不是 0.1 mm 标度。
-7. **模型输出 Schema**：所有模型参数必须经过服务端清洗；不能信任模型提交的 stockId、坐标或指标。
-8. **工具全局注册**：当前工具名带请求随机后缀，用于避免 SDK 全局 toolMap 并发闭包冲突。不要随意改回固定名字，除非同时解决并发隔离。
-9. **依赖审计**：安装 CloudBase SDK 时 npm 报告 12 个传递依赖漏洞。不要执行 `npm audit fix --force`；先识别是否是云函数运行路径中的可利用风险，再决定是否升级。
-10. **生成产物**：修改 `packages/core` 后必须运行 `npm run build`，同步 `cloudfunctions/api/core.js`、`core_module` 和 `miniprogram/utils/core`。
-
----
-
-## 八、验证命令
-
-每次关键修改后：
+### 步骤 8：完整质量门禁
 
 ```powershell
-npx tsc -p miniprogram/tsconfig.json --noEmit
-node --check cloudfunctions/api/agent.js
-node --check cloudfunctions/api/index.js
-npx vitest run tests/unit/agent-contracts.test.ts tests/unit/agent-orchestrator.test.ts tests/unit/agent-ui-entry.test.ts tests/integration/agent-flow.test.ts
-```
-
-准备提交前：
-
-```powershell
-npm run build
+npx vitest run tests/unit/deepseek-provider.test.ts tests/unit/agent-orchestrator.test.ts tests/unit/agent-contracts.test.ts tests/integration/agent-flow.test.ts
 npm test
-& 'D:\微信web开发者工具\cli.bat' preview --project 'D:\Codex\computerapp' --port 33560 --lang zh --qr-format image --qr-output 'D:\Codex\computerapp\artifacts\preview-1.1.0-final.png' --info-output 'D:\Codex\computerapp\artifacts\preview-1.1.0-final.json'
+npm run build
 ```
 
-当前基线是 40 文件、262 测试，不能下降。新增真实验收脚本后测试数量可增加。
+然后执行微信官方 preview。记录 preview 包体、二维码和 JSON 信息。若小程序端代码或版本元数据发生变化，上传下一个开发版本；不要覆盖证据或声称旧上传包包含新代码。
 
----
+### 步骤 9：同步文档
 
-## 九、文档与比赛材料的剩余工作
+真实严格验收通过后更新：
 
-必须更新：
-
-- `docs/设计文档-2026年.md`
-  - 赛道改为“大模型与智能体应用赛道”
-  - 加入实际模型 ID、CloudBase AI、四个工具、人工确认、失败降级、原创范围和 AI 辅助说明
-  - 自动化基线改为 40 文件、262 项
-  - 只有真实调用通过后才能写“真实模型已验收”
 - `README.md`
-  - 增加 AI 制作智能体架构、运行方式和降级边界
-  - 更新测试基线
 - `docs/progress.md`
-  - 记录真实部署日期、模型、超时、性能、已知失败
-- 生成官方模板 PDF
-- 生成源码包、二维码包和三幅核心截图
-- 录制不超过 5 分钟且不超过 150 MB 的 MP4
+- `docs/设计文档-2026年.md`
+- 本交接文档中的状态
+- 设计文档 DOCX/PDF
 
-三幅截图固定为：
+统一写明：
 
-1. 智能体追问与结构化任务；
-2. 工具调用证据与方案对比；
-3. 实物裁切、误差记录与余料复用。
+- 模型供应商：DeepSeek 官方 API；
+- 实际模型 ID：`deepseek-flash`；
+- CloudBase 作用：云函数、数据库、会话与小程序后端；
+- 当前未使用 CloudBase AI+ 托管模型；
+- 实测 Token、耗时、工具顺序和验证日期；
+- 人工确认与确定性复算边界。
 
-实物与体验数据使用 `docs/智能体实物与用户测试记录表.md`。不要提前填数字。
+实物实验、照片和三名体验者结果继续标记“待真人执行”，除非用户提供真实材料。
 
----
+### 步骤 10：安全检查、提交、推送、开发版上传
 
-## 十、Git 状态与提交要求
-
-当前工作树有大量未提交修改和新增文件，这是正常的 1.1.0 开发状态。不要执行：
-
-- `git reset --hard`
-- `git clean -fd`
-- 覆盖用户现有文件
-- 丢弃未提交改动
-
-先运行 `git diff --check` 和测试，再按实际完成范围提交。推荐在云端真实验收、文档同步后形成一个完整提交：
-
-```text
-feat: add verified cloudbase cutting agent
-```
-
-推送前再次确认没有密钥、Token、用户 OPENID、登录缓存或真实个人信息进入 Git。通常不要提交 `cloudbaserc.json`，除非确认其中没有凭据且确实需要作为可复现配置；更稳妥的做法是提交一份脱敏示例。
-
-完成提交后：
+提交前检查：
 
 ```powershell
-git push origin main
+git diff --check
+git status --short
+git diff --cached --name-only
 ```
 
-上传开发版本：
+对跟踪文件扫描密钥模式，结果必须为零。不要打印匹配内容，只输出匹配文件数量。建议提交信息：
 
-```powershell
-& 'D:\微信web开发者工具\cli.bat' upload --project 'D:\Codex\computerapp' --port 33560 --lang zh --version 1.1.0 --desc 'AI制作智能体：多轮需求补全、只读工具调用、独立校验与人工确认'
-```
+`feat: add verified deepseek cutting agent`
 
-上传前先查看 `upload --help` 确认当前 CLI 参数名。不要提交正式审核。
+推送到 `origin/main`。若生成 PR，附加到任务；若直接推送则记录提交哈希。
 
----
+最后用微信开发者工具 CLI 上传开发版本。禁止提交审核或正式发布。
 
-## 十一、完成定义
+## 五、关键文件
 
-只有同时满足以下条件，才能告诉用户“1.1.0 智能体升级已完成”：
+- 智能体编排：`cloudfunctions/api/agent.js`
+- DeepSeek 直连：`cloudfunctions/api/deepseek-provider.js`
+- 云函数入口：`cloudfunctions/api/index.js`
+- 智能体核心工具：`packages/core/src/agent/tools.ts`
+- 智能体契约：`packages/core/src/agent/contracts.ts`
+- 求解器：`packages/core/src/solver/index.ts`
+- 独立校验器：`packages/core/src/validator/index.ts`
+- 智能体页面：`miniprogram/pages/agent/agent.ts`
+- 云适配器：`miniprogram/utils/cloud-adapter.ts`
+- 严格自动化：`scripts/verify-agent-automator.cjs`
+- DeepSeek 测试：`tests/unit/deepseek-provider.test.ts`
+- 编排测试：`tests/unit/agent-orchestrator.test.ts`
+- 当前设计文档：`docs/设计文档-2026年.md`
+- 进度记录：`docs/progress.md`
 
-- 线上 `api` 超时至少 20 秒；
-- 真实 CloudBase 模型至少完成一次多轮、多个工具调用；
-- 实际模型 ID 已记录；
-- 模型不能绕过用户确认修改尺寸、保存工程或消耗材料；
-- 确认时重新查询库存并正式求解；
-- 全量测试、构建、官方预览和开发者工具核心点击流程通过；
-- 设计文档、README、截图和小程序显示同一版本与同一模型；
-- 1.1.0 已上传为微信开发版本；
-- Git 修改已提交并推送；
-- 实物实验和三人体验若未完成，必须明确标为“待真人执行”，不能宣称全部比赛材料完成。
+## 六、当前 Git 状态
 
----
-
-## 十二、给 Gemini 的汇报格式
-
-每次阶段完成后，用以下格式简短汇报：
+交接时未提交修改：
 
 ```text
-已完成：
-- ...
-
-验证证据：
-- 命令：
-- 结果：
-- 截图/日志：
-
-仍未完成：
-- ...
-
-下一步：
-- ...
+ M cloudbaserc.json
+ M cloudfunctions/api/agent.js
+ M miniprogram/utils/core/agent/contracts.d.ts
+ M packages/core/src/agent/contracts.ts
+ M tests/unit/agent-orchestrator.test.ts
+?? cloudfunctions/api/deepseek-provider.js
+?? tests/unit/deepseek-provider.test.ts
 ```
 
-最终报告必须列出：
+这些文件属于正在进行的 DeepSeek 接入，必须审查后继续，不能覆盖或丢弃。
 
-- 实际模型 ID；
-- 云函数 timeout；
-- 测试文件数和测试项数；
-- 官方预览包体；
-- 真实会话状态与工具顺序；
-- Git 提交 SHA；
-- 微信开发版本上传结果；
-- 仍需真人完成的实物、照片和体验数据。
+## 七、禁止误报
+
+以下说法在严格验收通过前都不能写入 README、设计文档、比赛材料或最终回复：
+
+- “真实智能体端到端验收已通过”；
+- “候选已通过独立校验”；
+- “1.1.0 上传包已经包含 DeepSeek 直连实现”；
+- “实物实验已经完成”；
+- “三名体验者测试已经完成”；
+- “一定能获奖”。
+
+可以准确陈述的是：DeepSeek 官方接口和线上云函数直连已经成功；真实模型已返回 Token、耗时并完成四个只读工具调用；当前确定性候选未通过独立校验，正在定位线上材料标度或求解输入问题。

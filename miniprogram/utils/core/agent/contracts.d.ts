@@ -40,9 +40,16 @@ export interface AgentTurnResponse {
     candidateSummary?: AgentCandidateSummary[];
     toolRuns: AgentToolRun[];
     model: {
-        provider: 'cloudbase';
+        provider: 'cloudbase' | 'deepseek';
         id: string;
-        aiGenerated: true;
+        aiGenerated: boolean;
+        usage?: {
+            prompt_tokens?: number;
+            completion_tokens?: number;
+            total_tokens?: number;
+        };
+        durationMs?: number;
+        degraded?: boolean;
     };
     draftVersion: number;
 }

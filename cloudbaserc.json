@@ -12,7 +12,9 @@
       "memorySize": 256,
       "installDependency": true,
       "envVariables": {
-        "QIAOCAI_AGENT_MODEL": "deepseek-v4-flash"
+        "QIAOCAI_AGENT_PROVIDER": "deepseek-direct",
+        "QIAOCAI_AGENT_BASE_URL": "https://api.deepseek.com",
+        "QIAOCAI_AGENT_MODEL": "deepseek-flash"
       }
     }
   ]
