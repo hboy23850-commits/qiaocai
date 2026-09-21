@@ -28,11 +28,11 @@ npm test
 npm run build
 ```
 
-当前验证基线为 40 个测试文件、266 项测试通过。`npm run build` 会编译核心算法，并同步生成小程序和云函数所需的产物。官方微信开发者工具已成功预览并上传 1.1.0 开发版。
+当前验证基线为 42 个测试文件、280 项测试通过。`npm run build` 会编译核心算法，并同步生成小程序和云函数所需的产物。官方微信开发者工具已成功预览并上传 1.1.0 开发版。
 
 使用微信开发者工具导入仓库根目录。项目 AppID 已写入 `project.config.json`；CloudBase 环境需要由有权限的开发者在微信开发者工具中登录后使用。
 
-线上 `api` 云函数超时为 20 秒，模型环境变量固定为 `deepseek-v4-flash`。2026年9月21日的 CloudBase 预检发现个人版环境不能启用文本模型，腾讯云返回 `FailedOperation.PackageUnsupported`；当前智能体会明确进入 `DEGRADED` 并转人工核对。升级到标准版并启用模型前，不得把降级流程视为真实 AI 调用成功。
+智能体已成功接入 DeepSeek 官方 API (`deepseek-flash`)。2026年9月21日，严格端到端自动化验收全部通过：模型在多轮对话中按序调用了 `list_available_stocks`、`validate_requirement`、`solve_and_compare`、`build_cut_summary` 四个工具，实测 Token 消耗正常，服务端复核 `validationPassed=true`。随后自动化脚本成功通过人工核对，方案被持久化并顺利进入比较及裁切指导页面。
 
 ## 目录结构
 

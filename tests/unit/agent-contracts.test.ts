@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildCutSummary,
   createRuleFallbackDraft,
+  enrichDraftStockIds,
   sanitizeAgentDraft,
   solveAndCompare,
   validateAgentTurnRequest,
@@ -93,6 +94,17 @@ describe('AI 制作智能体契约与只读工具', () => {
     };
     const safe = sanitizeAgentDraft(raw, a4Stocks);
     expect(safe.stockIds).toEqual(['a4-1']);
+  });
+
+  it('同材质同规格可用材料自动补齐至 stockIds，支持跨张排料', () => {
+    const draft: AgentDraft = {
+      stockIds: ['a4-1'],
+      partGroups: [{ id: 'g1', name: '展签', targetWidth: 1050, targetHeight: 700, quantity: 8, allowRotation: false }],
+      kerfMm: 2,
+      optimizationGoal: 'BALANCED',
+    };
+    const enriched = enrichDraftStockIds(draft, a4Stocks);
+    expect(enriched.stockIds).toEqual(['a4-1', 'a4-2']);
   });
 
   it('只读求解返回经过独立校验的候选摘要和裁切证据', () => {

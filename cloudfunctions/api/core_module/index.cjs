@@ -44,6 +44,7 @@ __export(src_exports, {
   createRuleFallbackDraft: () => createRuleFallbackDraft,
   doLineSegmentsIntersect: () => doLineSegmentsIntersect,
   douglasPeucker: () => douglasPeucker,
+  enrichDraftStockIds: () => enrichDraftStockIds,
   executeGuillotineSplit: () => executeGuillotineSplit,
   extractContourFromBinaryImage: () => extractContourFromBinaryImage,
   findContoursFromImageData: () => findContoursFromImageData,
@@ -2771,6 +2772,22 @@ function sanitizeAgentDraft(raw, accessibleStocks) {
     optimizationGoal: GOALS.has(raw?.optimizationGoal) ? raw.optimizationGoal : "BALANCED"
   };
 }
+function enrichDraftStockIds(draft, accessibleStocks) {
+  if (!draft || !Array.isArray(draft.stockIds) || draft.stockIds.length === 0) return draft;
+  const selectedStocks = accessibleStocks.filter((s) => draft.stockIds.includes(s.id) && s.status === "AVAILABLE");
+  if (selectedStocks.length === 0) return draft;
+  const matchingStockIds = accessibleStocks.filter((s) => s.status === "AVAILABLE" && selectedStocks.some((sel) => {
+    if (sel.id === s.id) return true;
+    const sameMaterial = Boolean(sel.group?.material && s.group?.material && sel.group.material === s.group.material);
+    const sameDims = sel.width === s.width && sel.height === s.height;
+    return sameMaterial || sameDims && !sel.isOffcut && !s.isOffcut;
+  })).map((s) => s.id);
+  if (matchingStockIds.length > draft.stockIds.length) {
+    const merged = [.../* @__PURE__ */ new Set([...draft.stockIds, ...matchingStockIds])];
+    return { ...draft, stockIds: merged };
+  }
+  return draft;
+}
 function validateRequirementDraft(draft, accessibleStocks) {
   const missingFields = [];
   const errors = [];
@@ -2846,6 +2863,7 @@ function buildCutSummary(output) {
   createRuleFallbackDraft,
   doLineSegmentsIntersect,
   douglasPeucker,
+  enrichDraftStockIds,
   executeGuillotineSplit,
   extractContourFromBinaryImage,
   findContoursFromImageData,

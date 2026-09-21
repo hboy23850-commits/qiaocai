@@ -62,6 +62,26 @@ export function sanitizeAgentDraft(raw: any, accessibleStocks: Stock[]): AgentDr
     optimizationGoal: GOALS.has(raw?.optimizationGoal) ? raw.optimizationGoal : 'BALANCED',
   };
 }
+export function enrichDraftStockIds(draft: AgentDraft, accessibleStocks: Stock[]): AgentDraft {
+  if (!draft || !Array.isArray(draft.stockIds) || draft.stockIds.length === 0) return draft;
+  const selectedStocks = accessibleStocks.filter((s) => draft.stockIds.includes(s.id) && s.status === 'AVAILABLE');
+  if (selectedStocks.length === 0) return draft;
+
+  const matchingStockIds = accessibleStocks
+    .filter((s) => s.status === 'AVAILABLE' && selectedStocks.some((sel) => {
+      if (sel.id === s.id) return true;
+      const sameMaterial = Boolean(sel.group?.material && s.group?.material && sel.group.material === s.group.material);
+      const sameDims = sel.width === s.width && sel.height === s.height;
+      return sameMaterial || (sameDims && !sel.isOffcut && !s.isOffcut);
+    }))
+    .map((s) => s.id);
+
+  if (matchingStockIds.length > draft.stockIds.length) {
+    const merged = [...new Set([...draft.stockIds, ...matchingStockIds])];
+    return { ...draft, stockIds: merged };
+  }
+  return draft;
+}
 export function validateRequirementDraft(draft: AgentDraft, accessibleStocks: Stock[]): AgentDraftValidation {
   const missingFields: string[] = []; const errors: string[] = [];
   if (!draft.stockIds.length) missingFields.push('stockIds');
