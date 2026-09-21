@@ -31,6 +31,20 @@ Page({
         if (defaultK !== '' && !isNaN(parseFloat(defaultK))) {
             this.setData({ kerfMm: parseFloat(defaultK) });
         }
+        const app = getApp();
+        if (options.agentDraft && app.globalData.agentDraft?.partGroups?.length) {
+            const draft = app.globalData.agentDraft;
+            const groups = draft.partGroups.map((group) => {
+                const clean = { ...group };
+                delete clean.widthMm;
+                delete clean.heightMm;
+                delete clean.shrinkMm;
+                return clean;
+            });
+            this.setData({ kerfMm: draft.kerfMm, partGroups: groups });
+            wx.setNavigationBarTitle({ title: '人工核对智能体草稿' });
+            return;
+        }
         if (options.demo) {
             this.setData({
                 isDemo: true,
@@ -49,7 +63,6 @@ Page({
             wx.setNavigationBarTitle({ title: 'A4 校园展签演示' });
             return;
         }
-        const app = getApp();
         const project = app.globalData && app.globalData.activeProject;
         if (options.project && project) {
             this.setData({

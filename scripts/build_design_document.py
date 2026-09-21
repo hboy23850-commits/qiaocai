@@ -133,9 +133,12 @@ def build_document():
             p.paragraph_format.space_after = Pt(24)
             continue
         if re.match(r"^\d+\.\s", line):
-            p = doc.add_paragraph(style="List Number")
+            # Preserve the explicit Markdown number so each independent list
+            # restarts where the source document intends.
+            p = doc.add_paragraph()
             p.paragraph_format.first_line_indent = Cm(0)
-            add_inline(p, re.sub(r"^\d+\.\s*", "", line))
+            p.paragraph_format.left_indent = Cm(0.74)
+            add_inline(p, line)
             continue
         if line.startswith("- "):
             p = doc.add_paragraph(style="List Bullet")

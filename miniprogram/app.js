@@ -3,6 +3,7 @@ App({
         currentPlan: null,
         selectedCandidate: null,
         stockList: [],
+        agentDraft: null,
         activeProject: null,
         customPartGroups: []
     },

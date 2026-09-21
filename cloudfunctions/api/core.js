@@ -31,6 +31,7 @@ __export(src_exports, {
   SPLIT_RULES: () => SPLIT_RULES,
   STOCK_ORDERS: () => STOCK_ORDERS,
   build24Strategies: () => build24Strategies,
+  buildCutSummary: () => buildCutSummary,
   buildProfileStrategies: () => buildProfileStrategies,
   calculatePolygonArea: () => calculatePolygonArea,
   calculatePolygonBBox: () => calculatePolygonBBox,
@@ -40,6 +41,7 @@ __export(src_exports, {
   compareProfileCandidates: () => compareProfileCandidates,
   computeHomography: () => computeHomography,
   createA4DemoOptions: () => createA4DemoOptions,
+  createRuleFallbackDraft: () => createRuleFallbackDraft,
   doLineSegmentsIntersect: () => doLineSegmentsIntersect,
   douglasPeucker: () => douglasPeucker,
   executeGuillotineSplit: () => executeGuillotineSplit,
@@ -63,16 +65,20 @@ __export(src_exports, {
   resetNodeIdCounter: () => resetNodeIdCounter,
   runA4Demo: () => runA4Demo,
   runSingleStrategy: () => runSingleStrategy,
+  sanitizeAgentDraft: () => sanitizeAgentDraft,
   sanitizeSVG: () => sanitizeSVG,
   snapAngle: () => snapAngle,
+  solveAndCompare: () => solveAndCompare,
   solveCuttingPlan: () => solveCuttingPlan,
   solveProfileCuttingPlan: () => solveProfileCuttingPlan,
   sortParts: () => sortParts,
   sortStocks: () => sortStocks,
   toInternalDimension: () => toInternalDimension,
   transformPoints: () => transformPoints,
+  validateAgentTurnRequest: () => validateAgentTurnRequest,
   validateCandidate: () => validateCandidate,
   validateProfilePlacements: () => validateProfilePlacements,
+  validateRequirementDraft: () => validateRequirementDraft,
   validateSolverInput: () => validateSolverInput
 });
 module.exports = __toCommonJS(src_exports);
@@ -2696,6 +2702,124 @@ function findContoursFromImageData(imageData, options = {}) {
   const geo = extractContourFromBinaryImage(binGrid, width, height, options);
   return [geo.points];
 }
+
+// packages/core/src/agent/tools.ts
+var GOALS = /* @__PURE__ */ new Set(["BALANCED", "SAVE_MATERIAL", "EASY_CUT"]);
+function validateAgentTurnRequest(input) {
+  const message = typeof input.message === "string" ? input.message.trim() : "";
+  if (!message) return { valid: false, error: "\u8BF7\u8F93\u5165\u5236\u4F5C\u9700\u6C42" };
+  if (message.length > 1e3) return { valid: false, error: "\u5355\u6B21\u8F93\u5165\u4E0D\u80FD\u8D85\u8FC71000\u5B57" };
+  return { valid: true };
+}
+function toScaled(value, unit) {
+  const mm = unit.toLowerCase() === "cm" ? value * 10 : value;
+  return Math.round(mm * 10);
+}
+function createRuleFallbackDraft(text) {
+  const normalized = String(text || "").trim();
+  const partGroups = [];
+  const pattern = /(?:(\d+)\s*(?:个|块|张|件|片)[^0-9\n]{0,12})?([0-9]+(?:\.[0-9]+)?)\s*[xX×乘*]\s*([0-9]+(?:\.[0-9]+)?)\s*(mm|cm|毫米|厘米)?/g;
+  let match;
+  let index = 1;
+  while ((match = pattern.exec(normalized)) !== null && partGroups.length < 10) {
+    const unit = match[4] === "cm" || match[4] === "\u5398\u7C73" ? "cm" : "mm";
+    const shrink = normalized.match(/(?:允许|可)[^。；，,]{0,16}(?:宽度)?(?:最多)?缩小\s*([012](?:\.0)?)\s*(?:mm|毫米)/);
+    const allowRotation = /(?:允许|可以|可)旋转/.test(normalized) && !/(?:不|禁止)旋转/.test(normalized);
+    const maxShrinkMm = shrink ? Number(shrink[1]) : 0;
+    const quantity = Number(match[1] || (normalized.match(/(\d+)\s*(?:个|块|张|件|片)/) || [])[1] || 1);
+    partGroups.push({
+      id: `agent-g${index}`,
+      name: /展签/.test(normalized) ? `\u5C55\u7B7E${index}` : `\u96F6\u4EF6\u7EC4${index}`,
+      targetWidth: toScaled(Number(match[2]), unit),
+      targetHeight: toScaled(Number(match[3]), unit),
+      quantity,
+      allowRotation,
+      rotationPolicy: allowRotation ? "RIGHT_ANGLE" : "LOCKED",
+      ...maxShrinkMm === 1 || maxShrinkMm === 2 ? { flexibleRange: { maxShrinkMm, stepMm: 1 } } : {}
+    });
+    index++;
+  }
+  const kerfMatch = normalized.match(/(?:间距|刀缝|缝隙)\s*(?:为|是|:|：)?\s*([0-9]+(?:\.[0-9]+)?)\s*(mm|毫米)?/);
+  return {
+    stockIds: [],
+    partGroups,
+    kerfMm: kerfMatch ? Math.max(0, Math.min(5, Number(kerfMatch[1]))) : 2,
+    optimizationGoal: /省料|节省|利用率/.test(normalized) ? "SAVE_MATERIAL" : "BALANCED"
+  };
+}
+function sanitizeAgentDraft(raw, accessibleStocks) {
+  const availableIds = new Set(accessibleStocks.filter((stock) => stock.status === "AVAILABLE").map((stock) => stock.id));
+  const rawGroups = Array.isArray(raw?.partGroups) ? raw.partGroups.slice(0, 10) : [];
+  const partGroups = rawGroups.map((group, index) => {
+    const maxShrink = Number(group?.flexibleRange?.maxShrinkMm);
+    const allowRotation = group?.allowRotation === true;
+    return {
+      id: String(group?.id || `agent-g${index + 1}`).slice(0, 64),
+      name: String(group?.name || `\u96F6\u4EF6\u7EC4${index + 1}`).slice(0, 40),
+      targetWidth: Math.round(Number(group?.targetWidth) || 0),
+      targetHeight: Math.round(Number(group?.targetHeight) || 0),
+      quantity: Math.round(Number(group?.quantity) || 0),
+      allowRotation,
+      rotationPolicy: allowRotation ? "RIGHT_ANGLE" : "LOCKED",
+      ...maxShrink === 1 || maxShrink === 2 ? { flexibleRange: { maxShrinkMm: maxShrink, stepMm: 1 } } : {}
+    };
+  });
+  return {
+    stockIds: Array.isArray(raw?.stockIds) ? [...new Set(raw.stockIds.map(String))].filter((id) => availableIds.has(id)) : [],
+    partGroups,
+    kerfMm: Math.max(0, Math.min(5, Number(raw?.kerfMm) || 0)),
+    optimizationGoal: GOALS.has(raw?.optimizationGoal) ? raw.optimizationGoal : "BALANCED"
+  };
+}
+function validateRequirementDraft(draft, accessibleStocks) {
+  const missingFields = [];
+  const errors = [];
+  if (!draft.stockIds.length) missingFields.push("stockIds");
+  if (!draft.partGroups.length) missingFields.push("partGroups");
+  const availableIds = new Set(accessibleStocks.filter((s) => s.status === "AVAILABLE").map((s) => s.id));
+  if (draft.stockIds.some((id) => !availableIds.has(id))) errors.push("\u5305\u542B\u4E0D\u53EF\u8BBF\u95EE\u6216\u5DF2\u6D88\u8017\u7684\u6750\u6599");
+  let totalQuantity = 0;
+  for (const group of draft.partGroups) {
+    totalQuantity += group.quantity;
+    if (!Number.isInteger(group.targetWidth) || !Number.isInteger(group.targetHeight) || group.targetWidth <= 0 || group.targetHeight <= 0) errors.push(`${group.name}\u7684\u5C3A\u5BF8\u5FC5\u987B\u4E3A\u6B63\u6570`);
+    if (!Number.isInteger(group.quantity) || group.quantity <= 0) errors.push(`${group.name}\u7684\u6570\u91CF\u5FC5\u987B\u4E3A\u6B63\u6574\u6570`);
+    if (group.targetWidth > 2e4 || group.targetHeight > 2e4) errors.push(`${group.name}\u7684\u5C3A\u5BF8\u8D85\u8FC72000mm\u4E0A\u9650`);
+    if (group.flexibleRange && ![1, 2].includes(group.flexibleRange.maxShrinkMm)) errors.push(`${group.name}\u7684\u5C3A\u5BF8\u8C03\u6574\u8303\u56F4\u65E0\u6548`);
+  }
+  if (totalQuantity > 20) errors.push("\u5355\u6B21\u4EFB\u52A1\u6700\u591A\u652F\u630120\u4E2A\u96F6\u4EF6");
+  if (draft.kerfMm < 0 || draft.kerfMm > 5) errors.push("\u88C1\u5207\u95F4\u8DDD\u5FC5\u987B\u57280\u52305mm\u4E4B\u95F4");
+  return { valid: missingFields.length === 0 && errors.length === 0, missingFields, errors };
+}
+function solveAndCompare(draft, accessibleStocks) {
+  const validation = validateRequirementDraft(draft, accessibleStocks);
+  if (!validation.valid) throw new Error([...validation.missingFields, ...validation.errors].join("\uFF1B"));
+  const selectedStocks = accessibleStocks.filter((stock) => draft.stockIds.includes(stock.id) && stock.status === "AVAILABLE");
+  const solverOutput = solveCuttingPlan({ stocks: selectedStocks, partGroups: draft.partGroups, kerfMm: draft.kerfMm });
+  const candidates = solverOutput.candidates.map((candidate) => {
+    const checked = validateCandidate(candidate, draft.partGroups, selectedStocks, draft.kerfMm);
+    return {
+      candidateId: candidate.candidateId,
+      sheetCount: candidate.usedStocks.length,
+      utilization: candidate.metrics.utilizationRate,
+      wasteRate: Math.max(0, 1 - candidate.metrics.utilizationRate),
+      cutComplexity: candidate.metrics.stepsCount,
+      validationPassed: checked.valid && candidate.isComplete,
+      appliedDeltaMm: candidate.appliedDeltaMm,
+      strategyName: candidate.strategyName
+    };
+  });
+  return { solverOutput, candidates, stocks: selectedStocks };
+}
+function buildCutSummary(output) {
+  const candidate = output.bestCompleteCandidate || output.candidates.find((item) => item.isComplete) || null;
+  return {
+    algorithmVersion: output.algorithmVersion,
+    candidateId: candidate?.candidateId || "",
+    stepsCount: candidate?.metrics.stepsCount || candidate?.cutPaths?.length || 0,
+    sheetCount: candidate?.usedStocks.length || 0,
+    placedCount: candidate?.placedParts.length || candidate?.profilePlacements?.length || 0
+  };
+}
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   ALGORITHM_VERSION,
@@ -2709,6 +2833,7 @@ function findContoursFromImageData(imageData, options = {}) {
   SPLIT_RULES,
   STOCK_ORDERS,
   build24Strategies,
+  buildCutSummary,
   buildProfileStrategies,
   calculatePolygonArea,
   calculatePolygonBBox,
@@ -2718,6 +2843,7 @@ function findContoursFromImageData(imageData, options = {}) {
   compareProfileCandidates,
   computeHomography,
   createA4DemoOptions,
+  createRuleFallbackDraft,
   doLineSegmentsIntersect,
   douglasPeucker,
   executeGuillotineSplit,
@@ -2741,15 +2867,19 @@ function findContoursFromImageData(imageData, options = {}) {
   resetNodeIdCounter,
   runA4Demo,
   runSingleStrategy,
+  sanitizeAgentDraft,
   sanitizeSVG,
   snapAngle,
+  solveAndCompare,
   solveCuttingPlan,
   solveProfileCuttingPlan,
   sortParts,
   sortStocks,
   toInternalDimension,
   transformPoints,
+  validateAgentTurnRequest,
   validateCandidate,
   validateProfilePlacements,
+  validateRequirementDraft,
   validateSolverInput
 });

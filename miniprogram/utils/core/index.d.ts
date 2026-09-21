@@ -14,3 +14,4 @@ export * from './geometry/svg-parser.js';
 export * from './geometry/image-contour.js';
 export * from './solver/cut-paths.js';
 export * from './solver/profile-solver.js';
+export * from './agent/index.js';

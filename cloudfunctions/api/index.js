@@ -2,6 +2,7 @@ const cloud = require('wx-server-sdk')
 // Use the bundled file directly. CloudBase does not reliably install local file:
 // dependencies during CLI deployment, while this file is always uploaded with us.
 const { solveCuttingPlan, validateCandidate } = require('./core.js')
+const { runAgentTurn } = require('./agent.js')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
@@ -1067,6 +1068,12 @@ const controllers = {
       await db.collection('projects').where({ ownerId: wxContext.OPENID }).remove();
     }
     return success({}, 'User data cleared');
+  },
+
+  // 智能体单轮对话与工具调度
+  async agentTurn(payload, wxContext) {
+    const data = await runAgentTurn(payload, wxContext, { db, getUser });
+    return success(data);
   }
 };
 
@@ -1081,6 +1088,6 @@ exports.main = async (event, context) => {
     return await controllers[action](payload, wxContext);
   } catch (err) {
     console.error(`[Error] Action: ${action}`, err);
-    return fail(500, err.message);
+    return fail(err.statusCode || 500, err.message);
   }
 };

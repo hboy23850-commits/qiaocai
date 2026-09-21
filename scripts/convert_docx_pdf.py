@@ -1,8 +1,6 @@
 from pathlib import Path
 import shutil
-import subprocess
 import tempfile
-import time
 import win32com.client
 
 
@@ -11,21 +9,13 @@ docx_path = root / "output" / "doc" / "巧裁-软件创意设计文档.docx"
 pdf_path = root / "output" / "doc" / "巧裁-软件创意设计文档.pdf"
 
 def export_pdf(source: Path, destination: Path) -> None:
-    word_executable = Path(r"C:\Program Files\Microsoft Office\root\Office16\WINWORD.EXE")
-    word_process = None
-    if word_executable.exists():
-        # WPS may replace the Word.Application registry entry. Launch the real
-        # Microsoft Word automation server first, then attach to that instance.
-        word_process = subprocess.Popen(
-            [str(word_executable), "/automation"],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-        time.sleep(2)
-        word = win32com.client.GetActiveObject("Word.Application")
-    else:
-        word = win32com.client.DispatchEx("Word.Application")
-    word.Visible = False
+    # Use an isolated automation instance. Attaching to a desktop Word/WPS
+    # process can make Visible read-only and causes unreliable PDF exports.
+    word = win32com.client.DispatchEx("Word.Application")
+    try:
+        word.Visible = False
+    except Exception:
+        pass
     word.DisplayAlerts = 0
     document = None
     try:
@@ -37,13 +27,7 @@ def export_pdf(source: Path, destination: Path) -> None:
         try:
             word.Quit()
         except Exception:
-            # WPS/Word may close its COM server immediately after exporting.
             pass
-        if word_process is not None:
-            try:
-                word_process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                word_process.terminate()
 
 
 try:

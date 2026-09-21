@@ -1,6 +1,7 @@
 {
   "pages": [
     "pages/index/index",
+    "pages/agent/agent",
     "pages/stock/stock",
     "pages/requirement/requirement",
     "pages/flex/flex",

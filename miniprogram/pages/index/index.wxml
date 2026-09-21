@@ -5,6 +5,18 @@
     <view class="subtitle">输入材料和零件尺寸，自动比较排料方案，按图裁切并保存余料。</view>
   </view>
 
+  <view class="agent-entry">
+    <view class="agent-entry-tag">AI 制作智能体 · 可验证工具调用</view>
+    <view class="agent-entry-title">告诉巧裁你想做什么</view>
+    <view class="agent-entry-desc">描述成品、数量、尺寸和材料，巧裁会追问缺失条件并调用排料算法。</view>
+    <t-textarea value="{{agentText}}" maxlength="1000" autosize placeholder="例：用 A4 卡纸做 8 张 105×70 mm 展签" bind:change="updateAgentText" />
+    <t-button id="home-agent-start" theme="primary" block bind:tap="navToAgent">开始智能规划</t-button>
+    <view class="agent-demo-row">
+      <text data-demo="a4" bind:tap="startAgentDemo">A4 展签样例</text>
+      <text data-demo="kt" bind:tap="startAgentDemo">KT 机翼样例</text>
+    </view>
+  </view>
+
   <view class="demo-card">
     <view class="demo-copy">
       <view class="demo-kicker">第一次使用？</view>

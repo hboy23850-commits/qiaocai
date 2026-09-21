@@ -52,9 +52,9 @@
 
 ## 3. 测试覆盖与验收记录
 - **测试框架**：Vitest v2.1.9
-- **测试文件总数**：36 passed (36)
-- **用例总数**：247 passed (247)
-- **已执行用例通过率**：100% (247/247)
+- **测试文件总数**：40 passed (40)
+- **用例总数**：266 passed (266)
+- **已执行用例通过率**：100% (266/266)
 - **真实云端自动化证据**：A4 案例已在正式云环境进入方案比较页，并选择 1 张材料方案进入 9 步裁切图；控制台无运行错误。
 - **证据边界**：真实 CloudBase 事务冲突、两部真机公网访问和实物裁切效果仍需人工验收。
 - **重点套件**：
@@ -168,3 +168,30 @@
   - 已提交审核：待微信公众平台后台操作
   - 审核通过：待微信审核
   - 已发布：待发布上线
+
+---
+
+## 8. 2026-09-21 AI 制作智能体 1.1.0 实施记录
+
+### （一）已完成
+
+- [x] `api` 云函数线上超时为20秒，运行时为 Nodejs16.13，状态 Active。
+- [x] 云函数模型环境变量固定为 `QIAOCAI_AGENT_MODEL=deepseek-v4-flash`，本地 `cloudbaserc.json` 与线上一致。
+- [x] 智能体合同、会话、四个只读工具、结构化清洗、独立求解校验、人工确认和规则降级均已实现并部署。
+- [x] 端到端脚本新增严格验收门：默认必须同时满足真实模型、Token usage、四个只读工具、`validationPassed=true` 和人工确认；降级链路只能记录为 `DEGRADED_FALLBACK_VERIFIED`，不能再输出“真实 AI 全部通过”。
+- [x] 2026年9月21日全量测试：40个测试文件、266项测试全部通过；`npm run build` 成功。
+- [x] 微信开发者工具官方 preview 成功，主包 595.2 KB（609448 Byte），产物为 `artifacts/preview-1.1.0-final.png` 与 `artifacts/preview-1.1.0-final.json`。
+- [x] 1.1.0 已上传为微信开发版本，上传包 1.6 MB（1625974 Byte），记录为 `artifacts/upload-1.1.0.json`；未提交审核、未正式发布。
+
+### （二）CloudBase AI+ 真实状态
+
+- `DescribeAIModels` 显示 `cloudbase` 文本模型组存在且已开启，但 `Models` 为空；此前直接调用混元和 DeepSeek 均返回 HTTP 429。
+- 官方目录确认 `deepseek-v4-flash` 支持工具调用与结构化输出，当前目录价格为输入1元/百万Token、输出2元/百万Token。
+- 调用 `UpdateAIModel` 启用模型时，腾讯云返回 `FailedOperation.PackageUnsupported`，明确提示“当前环境的套餐不支持，请升级到标准版及以上套餐”。因此真实模型多工具调用验收尚未通过。
+- 降级自动化完成三轮对话、人工核对、正式确定性求解、方案比较和裁切页，控制台无未捕获异常；证据文件 `artifacts/agent-e2e-evidence.json` 的状态为 `DEGRADED_FALLBACK_VERIFIED`。
+
+### （三）仍需完成
+
+1. 由账号持有人决定是否将 CloudBase 个人版升级到标准版或以上；升级后启用 `deepseek-v4-flash`。
+2. 重新运行默认严格模式 `node scripts/verify-agent-automator.cjs`，必须获得真实 Token usage、四个工具顺序和 `validationPassed=true` 后才能写入“真实 AI 验收通过”。
+3. 完成两部真机公网测试、A4与KT板实物实验和三名非开发成员体验记录；这些内容仍标记为“待真人执行”。

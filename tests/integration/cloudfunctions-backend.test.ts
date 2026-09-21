@@ -23,6 +23,18 @@ class MockCollection {
     return new MockDocRef(this, id);
   }
 
+  limit(count: number) {
+    return new MockQuery(this, {}).limit(count);
+  }
+
+  orderBy(field: string, dir: 'asc' | 'desc' = 'asc') {
+    return new MockQuery(this, {}).orderBy(field, dir);
+  }
+
+  get() {
+    return new MockQuery(this, {}).get();
+  }
+
   async add({ data }: { data: any }) {
     const _id = data._id || `${this.name}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
     const doc = { ...data, _id };
@@ -170,15 +182,35 @@ const mockSdk = {
   })
 };
 
-// Setup require intercept for 'wx-server-sdk'
+let mockGenerateTextImpl = async (_params: any) => {
+  throw new Error('AI offline in unit test environment');
+};
+
+const mockCloudbase = {
+  SYMBOL_CURRENT_ENV: 'test-env',
+  init: () => ({
+    ai: () => ({
+      registerFunctionTool: () => {},
+      createModel: () => ({
+        generateText: (params: any, _opts: any) => mockGenerateTextImpl(params),
+      }),
+    }),
+  }),
+};
+
+// Setup require intercept for 'wx-server-sdk' and '@cloudbase/node-sdk'
 import Module from 'node:module';
 const originalRequire = (Module.prototype as any).require;
 (Module.prototype as any).require = function (id: string, ...args: any[]) {
   if (id === 'wx-server-sdk') {
     return mockSdk;
   }
+  if (id === '@cloudbase/node-sdk') {
+    return mockCloudbase;
+  }
   return originalRequire.apply(this, [id, ...args]);
 };
+
 
 describe('CloudBase Backend (cloudfunctions/api/index.js) Empirical Challenge', () => {
   let mainHandler: any;
@@ -460,5 +492,85 @@ describe('CloudBase Backend (cloudfunctions/api/index.js) Empirical Challenge', 
     expect(second.code).toBe(200);
     expect(second.data.stocks).toHaveLength(2);
     expect(mockDbInstance.getCollection('stocks').docs).toHaveLength(2);
+  });
+
+  // -------------------------------------------------------------------------
+  // Test 9: AgentTurn Router Dispatch & Persistence Isolation (Regression Guard)
+  // -------------------------------------------------------------------------
+  it('B9: agentTurn route exists, dispatches correctly, and persists session in agent_sessions', async () => {
+    currentWxContext.OPENID = 'student_agent_user';
+
+    // 1. Unregistered action returns 404
+    const resUnknown = await mainHandler({ action: 'nonExistentAction', payload: {} }, {});
+    expect(resUnknown.code).toBe(404);
+
+    // 2. Empty message returns 400
+    const resEmpty = await mainHandler({ action: 'agentTurn', payload: { message: '' } }, {});
+    expect(resEmpty.code).toBe(400);
+
+    // 3. Valid message dispatches to agentTurn controller and returns 200 with structured response
+    const res = await mainHandler({
+      action: 'agentTurn',
+      payload: { message: '做8个105x70mm标牌，材料使用A4' }
+    }, {});
+
+    expect(res.code).toBe(200);
+    expect(res.msg).toBe('success');
+    expect(res.data).toBeDefined();
+    expect(res.data.sessionId).toBeDefined();
+    expect(res.data.draft).toBeDefined();
+    expect(res.data.toolRuns).toBeDefined();
+
+    // 4. Verify session record was persisted to agent_sessions
+    const sessionCol = mockDbInstance.getCollection('agent_sessions');
+    expect(sessionCol.docs.length).toBeGreaterThanOrEqual(1);
+    const saved = sessionCol.docs.find(d => d._id === res.data.sessionId);
+    expect(saved).toBeDefined();
+    expect(saved.ownerId).toBe('student_agent_user');
+
+    // 5. Verify no unintended writes to plans or executions (read-only safety boundary)
+    const plansCol = mockDbInstance.getCollection('plans');
+    const execsCol = mockDbInstance.getCollection('executions');
+    expect(plansCol.docs.length).toBe(0);
+    expect(execsCol.docs.length).toBe(0);
+  });
+
+  it('B10: agentTurn handles AI model generation and updates multi-turn messages', async () => {
+    currentWxContext.OPENID = 'student_ai_turn';
+    mockGenerateTextImpl = async () => ({
+      text: JSON.stringify({
+        status: 'NEEDS_INPUT',
+        assistantMessage: '好的，请问每个标牌的厚度和材料要求是什么？',
+        clarification: { field: 'material', question: '请指定材料类型' },
+        draft: {
+          partGroups: [
+            { id: 'g1', name: '标牌', targetWidth: 1050, targetHeight: 700, quantity: 8, allowRotation: false }
+          ],
+          kerfMm: 2,
+          optimizationGoal: 'BALANCED'
+        }
+      }),
+      usage: { prompt_tokens: 120, completion_tokens: 45, total_tokens: 165 }
+    });
+
+    const res = await mainHandler({
+      action: 'agentTurn',
+      payload: { message: '做8个105x70mm标牌' }
+    }, {});
+
+    expect(res.code).toBe(200);
+    expect(res.data.status).toBe('NEEDS_INPUT');
+    expect(res.data.assistantMessage).toContain('标牌');
+    expect(res.data.model.aiGenerated).toBe(true);
+    expect(res.data.model.usage.total_tokens).toBe(165);
+
+    // Multi-turn continuation with sessionId
+    const res2 = await mainHandler({
+      action: 'agentTurn',
+      payload: { sessionId: res.data.sessionId, message: '使用亚克力板' }
+    }, {});
+    expect(res2.code).toBe(200);
+    expect(res2.data.sessionId).toBe(res.data.sessionId);
+    expect(res2.data.draftVersion).toBe(2);
   });
 });

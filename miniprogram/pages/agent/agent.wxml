@@ -1,0 +1,61 @@
+<view class="agent-page">
+  <view class="agent-hero">
+    <view class="agent-kicker">QIAOCAI AGENT · 1.1.0</view>
+    <view class="agent-title">告诉巧裁你想做什么</view>
+    <view class="agent-subtitle">AI 负责理解和调用工具，几何算法负责计算与独立校验，最终方案由你确认。</view>
+  </view>
+  <view class="stage-card">
+    <view class="stage" wx:for="{{['理解需求','补全条件','调用排料','独立校验','等待确认']}}" wx:key="*this">
+      <view class="stage-dot {{index <= stageIndex ? 'active' : ''}}">{{index + 1}}</view>
+      <text class="{{index <= stageIndex ? 'active-text' : ''}}">{{item}}</text>
+    </view>
+  </view>
+  <view class="notice simulated" wx:if="{{isSimulated}}">当前为本地模拟适配器，结果不代表真实大模型调用。</view>
+  <view class="notice degraded" wx:if="{{isDegraded}}">AI 服务不可用，已切换规则录入。规则草稿必须人工核对，不能直接确认。</view>
+  <view class="chat-card">
+    <view class="message assistant">{{assistantMessage}}</view>
+    <block wx:for="{{messages}}" wx:key="index">
+      <view class="message {{item.role}}">{{item.content}}</view>
+    </block>
+  </view>
+  <view class="draft-card" wx:if="{{draft}}">
+    <view class="card-head">
+      <view><view class="card-label">结构化任务卡</view><view class="card-title">请逐项核对</view></view>
+      <view class="lock-badge">默认锁定尺寸</view>
+    </view>
+    <view class="detail-row"><text>材料</text><text>{{draft.stockIds.length}} 块已选材料</text></view>
+    <view class="detail-row"><text>间距</text><text>{{draft.kerfMm}} mm</text></view>
+    <view class="detail-row"><text>目标</text><text>{{draft.optimizationGoal}}</text></view>
+    <view class="part" wx:for="{{draft.partGroups}}" wx:key="id">
+      <view class="part-title">{{item.name || '零件'}}</view>
+      <view class="part-meta">{{item.widthMm}} × {{item.heightMm}} mm · {{item.quantity}} 件</view>
+      <view class="part-meta">旋转：{{item.allowRotation ? '允许' : '禁止'}} · 尺寸调整：{{item.shrinkMm > 0 ? '最多缩小 ' + item.shrinkMm + ' mm' : '不允许'}}</view>
+    </view>
+  </view>
+  <view class="evidence-card" wx:if="{{toolRuns.length || model}}">
+    <view class="card-title">可核验工具证据</view>
+    <view class="tool-run" wx:for="{{toolRuns}}" wx:key="index">
+      <view class="tool-status {{item.ok ? 'ok' : 'bad'}}">{{item.ok ? '通过' : '未通过'}}</view>
+      <view class="tool-copy"><view>{{item.tool}}</view><text>{{item.summary}}</text></view>
+    </view>
+    <view class="model-row" wx:if="{{model}}">模型：{{model.id}} · {{model.aiGenerated ? 'AI 生成' : '规则/模拟输出'}}</view>
+  </view>
+  <view class="candidate-card" wx:if="{{candidateSummary.length}}">
+    <view class="card-title">已通过独立校验的候选</view>
+    <view class="candidate" wx:for="{{candidateSummary}}" wx:key="candidateId">
+      <view><b>{{item.sheetCount}}</b> 张材料</view><view>利用率 {{item.utilization}}%</view>
+      <view>废料率 {{item.wasteRate}}%</view><view>复杂度 {{item.cutComplexity}}</view>
+    </view>
+  </view>
+  <view class="composer">
+    <t-textarea value="{{inputText}}" maxlength="1000" autosize placeholder="例：用 A4 卡纸做 8 张 105×70 mm 展签，不旋转，间距 2 mm" bind:change="updateInput" />
+    <t-button id="agent-send" theme="primary" block loading="{{isSending}}" disabled="{{isSending || !inputText}}" bind:tap="sendMessage">发送给制作智能体</t-button>
+    <view class="demo-links"><text data-demo="a4" bind:tap="useDemo">填入 A4 展签样例</text><text data-demo="kt" bind:tap="useDemo">填入 KT 机翼样例</text></view>
+  </view>
+  <view class="actions">
+    <t-button id="agent-confirm" wx:if="{{canConfirm}}" theme="primary" block loading="{{isConfirming}}" bind:tap="confirmAndSolve">确认并正式求解</t-button>
+    <t-button id="agent-manual-review" wx:if="{{isDegraded}}" variant="outline" theme="primary" block bind:tap="openManualEntry">转到人工核对</t-button>
+  </view>
+  <view class="boundary">智能体不会保存工程、修改库存或代替你确认尺寸。材料只在裁切结案后扣减。</view>
+  <t-toast id="t-toast" />
+</view>

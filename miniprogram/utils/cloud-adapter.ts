@@ -1,5 +1,12 @@
 import { solveCuttingPlan } from './core/solver/index.js';
 import { createA4DemoOptions } from './core/demo/a4-demo.js';
+import {
+  buildCutSummary,
+  createRuleFallbackDraft,
+  sanitizeAgentDraft,
+  solveAndCompare,
+  validateRequirementDraft,
+} from './core/agent/index.js';
 
 declare const wx: any;
 
@@ -10,6 +17,7 @@ export interface MockDatabaseState {
   plans: any[];
   executions: any[];
   quotes: any[];
+  agentSessions: any[];
 }
 
 export const mockDatabase: MockDatabaseState = {
@@ -18,7 +26,8 @@ export const mockDatabase: MockDatabaseState = {
   stocks: [],
   plans: [],
   executions: [],
-  quotes: []
+  quotes: [],
+  agentSessions: []
 };
 
 let currentSimulatedOpenId = 'test_mock_openid_001';
@@ -47,6 +56,7 @@ export function resetMockDatabase() {
   mockDatabase.plans = [];
   mockDatabase.executions = [];
   mockDatabase.quotes = [];
+  mockDatabase.agentSessions = [];
   currentSimulatedOpenId = 'test_mock_openid_001';
 }
 
@@ -71,6 +81,85 @@ function executeMockAction(action: string, payload: any = {}): { code: number; d
   const user = findCurrentUser();
 
   switch (action) {
+
+    case 'prepareDemo': {
+      const existing = mockDatabase.stocks.filter((stock) => stock.ownerId === openId && stock.code?.startsWith('DEMO-A4'));
+      if (existing.length < 2) {
+        for (let i = existing.length; i < 2; i++) {
+          const id = `demo-a4-${i + 1}`;
+          mockDatabase.stocks.push({
+            _id: id, id, code: `DEMO-A4-${i + 1}`, ownerId: openId,
+            group: { material: 'A4卡纸', thicknessMm: 0.3, color: '白色' },
+            width: 2100, height: 2970, isOffcut: false, status: 'AVAILABLE', version: 1,
+          });
+        }
+      }
+      return { code: 200, data: { stocks: mockDatabase.stocks.filter((stock) => stock.ownerId === openId && stock.status === 'AVAILABLE') }, msg: '演示材料已准备' };
+    }
+
+    case 'agentTurn': {
+      const message = String(payload?.message || '').trim();
+      if (!message || message.length > 1000) return { code: 400, msg: message ? '单次输入不能超过1000字' : '请输入制作需求' };
+      const sessionId = payload?.reset || !payload?.sessionId ? `agent-${Date.now()}` : String(payload.sessionId);
+      let session = mockDatabase.agentSessions.find((item) => item.sessionId === sessionId && item.ownerId === openId);
+      if (!session) {
+        session = { sessionId, ownerId: openId, messages: [], draftVersion: 0 };
+        mockDatabase.agentSessions.push(session);
+      }
+      session.messages.push({ role: 'user', content: message });
+      session.messages = session.messages.slice(-12);
+      const combined = session.messages.filter((item: any) => item.role === 'user').map((item: any) => item.content).join('；');
+      const accessibleStocks = mockDatabase.stocks
+        .filter((stock) => stock.status === 'AVAILABLE' && (user?.factoryId ? stock.factoryId === user.factoryId : stock.ownerId === openId && !stock.factoryId))
+        .map((stock) => ({ ...stock, id: stock.id || stock._id }));
+      const parsed = createRuleFallbackDraft(combined);
+      parsed.stockIds = accessibleStocks.map((stock) => stock.id);
+      const draft = sanitizeAgentDraft(parsed, accessibleStocks);
+      const toolRuns: any[] = [{ tool: 'list_available_stocks', ok: true, summary: `查询到 ${accessibleStocks.length} 块当前用户可用材料` }];
+      let status = 'NEEDS_INPUT';
+      let assistantMessage = '';
+      let clarification: any;
+      let candidateSummary: any[] = [];
+      if (!draft.partGroups.length) {
+        assistantMessage = '请告诉我每种零件的数量、长和宽，例如“8张105×70mm展签”。';
+        clarification = { field: 'partGroups', question: assistantMessage };
+      } else if (!draft.stockIds.length) {
+        assistantMessage = '还没有可用材料。请先登记卡纸或板材，再让我为你比较方案。';
+        clarification = { field: 'stockIds', question: assistantMessage };
+      } else {
+        const checked = validateRequirementDraft(draft, accessibleStocks);
+        toolRuns.push({ tool: 'validate_requirement', ok: checked.valid, summary: checked.valid ? '尺寸、数量、间距和材料权限校验通过' : [...checked.missingFields, ...checked.errors].join('；') });
+        if (checked.valid) {
+          const solved = solveAndCompare(draft, accessibleStocks);
+          candidateSummary = solved.candidates;
+          toolRuns.push({ tool: 'solve_and_compare', ok: candidateSummary.some((item) => item.validationPassed), summary: `确定性求解器生成 ${candidateSummary.length} 个候选` });
+          const cut = buildCutSummary(solved.solverOutput);
+          toolRuns.push({ tool: 'build_cut_summary', ok: Boolean(cut.candidateId), summary: `算法 ${cut.algorithmVersion}；推荐方案 ${cut.sheetCount} 张材料、${cut.stepsCount} 个裁切步骤` });
+          if (candidateSummary.some((item) => item.validationPassed)) {
+            status = 'AWAITING_CONFIRMATION';
+            assistantMessage = '我已调用排料与独立校验工具生成候选。请核对尺寸和材料，确认后系统会重新正式求解。';
+          } else {
+            assistantMessage = '当前材料无法完整放置所有零件，请增加材料或调整已授权的尺寸范围。';
+            clarification = { field: 'stockIds', question: assistantMessage };
+          }
+        } else {
+          assistantMessage = [...checked.missingFields, ...checked.errors].join('；');
+          clarification = { field: checked.missingFields[0] || 'partGroups', question: assistantMessage };
+        }
+      }
+      session.draft = draft;
+      session.draftVersion += 1;
+      session.messages.push({ role: 'assistant', content: assistantMessage });
+      session.messages = session.messages.slice(-12);
+      return {
+        code: 200,
+        data: {
+          sessionId, status, assistantMessage, draft, clarification, candidateSummary, toolRuns,
+          model: { provider: 'cloudbase', id: 'mock-rule-simulator', aiGenerated: false, simulated: true },
+          draftVersion: session.draftVersion,
+        },
+      };
+    }
     // SaaS: 创建工厂
     case 'createFactory': {
       const name = (payload.name || payload.factoryName || '').trim();

@@ -6,7 +6,8 @@ Page({
   data: {
     stockCount: 0,
     offcutCount: 0,
-    isStartingDemo: false
+    isStartingDemo: false,
+    agentText: ''
   },
 
   onShow() {
@@ -27,6 +28,20 @@ Page({
     } catch (e) {
       console.warn('[Index] fetchStats error:', e);
     }
+  },
+
+  updateAgentText(e: any) {
+    this.setData({ agentText: e.detail.value });
+  },
+
+  navToAgent() {
+    const text = String(this.data.agentText || '').trim();
+    const query = text ? '?prompt=' + encodeURIComponent(text) : '';
+    wx.navigateTo({ url: '/pages/agent/agent' + query });
+  },
+
+  startAgentDemo(e: any) {
+    wx.navigateTo({ url: '/pages/agent/agent?demo=' + e.currentTarget.dataset.demo });
   },
 
   navToRequirement() {
